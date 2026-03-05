@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 export type Column<T> = {
@@ -18,6 +18,7 @@ export default function DataTable<T extends Record<string, any>>({
   initialSortDir = "asc",
   onSortChange,
   pageSize,
+  getRowKey,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -26,6 +27,7 @@ export default function DataTable<T extends Record<string, any>>({
   initialSortDir?: "asc" | "desc";
   onSortChange?: (state: SortState<T>) => void;
   pageSize?: number;
+  getRowKey?: (row: T, index: number) => React.Key;
 }) {
   const [sortkey, setSortkey] = useState<keyof T | undefined>(
     initialSortKey ?? ("id" as keyof T)
@@ -60,12 +62,18 @@ export default function DataTable<T extends Record<string, any>>({
       : rows;
 
   const totalRows = sortedRows.length;
-  const totalPages = pageSize ? Math.ceil(totalRows / pageSize) : 1;
+  const totalPages = pageSize ? Math.max(1, Math.ceil(totalRows / pageSize)) : 1;
   const pageIndex = Math.min(Math.max(1, currentPage), totalPages);
   const paginatedRows = pageSize
     ? sortedRows.slice((pageIndex - 1) * pageSize, pageIndex * pageSize)
     : sortedRows;
   const displayRows = paginatedRows;
+
+  const resolveRowKey = (row: T, index: number): React.Key => {
+    if (getRowKey) return getRowKey(row, index);
+    const maybeId = (row as any)?.id;
+    return maybeId != null ? maybeId : index;
+  };
 
   return (
     <div
@@ -113,15 +121,34 @@ export default function DataTable<T extends Record<string, any>>({
                   style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >
                   {c.header}
-                  {sortkey === c.key ? (
-                    sortDir === "asc" ? (
-                      <ArrowDownWideNarrow size={16} style={{ opacity: 1 }} />
-                    ) : (
-                      <ArrowUpNarrowWide size={16} style={{ opacity: 1 }} />
-                    )
-                  ) : (
-                    <ArrowUpDown size={16} style={{ opacity: 0.5 }} />
-                  )}
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      flexDirection: "column",
+                      gap: 0,
+                      lineHeight: 0,
+                      marginTop: "-1px",
+                    }}
+                  >
+                    <ArrowUp
+                      size={14}
+                      style={{
+                        opacity:
+                          sortkey === (c.key as any) && sortDir === "asc"
+                            ? 1
+                            : 0.35,
+                      }}
+                    />
+                    <ArrowDown
+                      size={14}
+                      style={{
+                        opacity:
+                          sortkey === (c.key as any) && sortDir === "desc"
+                            ? 1
+                            : 0.35,
+                      }}
+                    />
+                  </span>
                 </div>
               </th>
             ))}
@@ -144,7 +171,7 @@ export default function DataTable<T extends Record<string, any>>({
           ) : (
             displayRows.map((r, i) => (
               <tr
-                key={i}
+                key={resolveRowKey(r, i)}
                 style={{
                   background: i % 2 === 0 ? "#ffffff" : "#f9fafb",
                   transition: "background-color 0.2s",
