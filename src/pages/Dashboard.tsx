@@ -515,15 +515,14 @@ const itemStyle = {
         <div
           style={{
             marginBottom: "1rem",
-            position: "sticky",
-            top: "110px",
+            position: "static",
             marginTop: "0.1rem",
             display: "flex",
             flexWrap: "wrap",
             gap: "16px",
-            
+            background: "#ffffff",
             borderRadius: "10px",
-            border: "1px solid white"
+            border: "1px solid #e5e7eb"
            
              
           }}
