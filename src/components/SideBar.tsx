@@ -53,7 +53,7 @@ export default function Sidebar({selectedView, setSelectedView}: SidebarProps) {
                         alignItems: "center",
                         justifyContent: "center",
                         height: 64,
-                        borderBottom: "170px solid white",
+                        borderBottom: "1px solid #e5e7eb",
                         
 
                     }}
