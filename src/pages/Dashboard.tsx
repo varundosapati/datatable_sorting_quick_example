@@ -437,8 +437,9 @@ const itemStyle = {
         display:"flex",
         alignItems:"center",
         justifyContent:"space-between",
+        flexWrap:"wrap",
         gap: "1rem",
-        padding:"0 8px",
+        padding:"8px 16px",
         fontSize:"1.05rem",
       }}>
                 <div className="brand">
@@ -518,38 +519,38 @@ const itemStyle = {
             position: "static",
             marginTop: "0.1rem",
             display: "flex",
-            flexWrap: "wrap",
-            gap: "16px",
+            flexDirection: "column",
+            gap: "12px",
+            padding: "12px 16px",
             background: "#ffffff",
             borderRadius: "10px",
-            border: "1px solid #e5e7eb"
-           
-             
+            border: "1px solid #e5e7eb",
+            boxSizing: "border-box",
+            width: "100%",
           }}
         >
-            <Typography variant="h6" component="div" sx={{ variant: "h1", flexGrow: 1, paddingLeft: 1, fontWeight: 'bold', color: 'gray' }}>
+            <Typography variant="h6" component="div" sx={{ variant: "h1", paddingLeft: 0, fontWeight: 'bold', color: 'gray' }}>
 
           Filters
         </Typography>
          <div
          style={{
-            display: "flex",
-           
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "16px",
+            width: "100%",
          }}   
          >
          <label
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex",
+              alignItems: "stretch",
               gap: "4px",
               fontSize: "0.875rem",
               color: "#374151",
-              minWidth: "200px",
-              flex: 1
-              
-              
-              
+              minWidth: 0,
+              width: "100%",
             }}
           >
             <span>Team Code</span>
@@ -604,15 +605,12 @@ const itemStyle = {
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex",
+              alignItems: "stretch",
               gap: "4px",
               fontSize: "0.875rem",
-              paddingLeft: "10px",
               color: "#374151",
-              minWidth: "180px",
-              height: "52px"
-              
-              
+              minWidth: 0,
+              width: "100%",
             }}
           >
             <span>Channel</span>
@@ -657,27 +655,29 @@ const itemStyle = {
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex",
-              gap: "0.25rem",
+              alignItems: "stretch",
+              gap: "4px",
               fontSize: "0.875rem",
               color: "#374151",
-              paddingLeft: "8px",
-              paddingRight: "5px",
-              height: "72px"
+              minWidth: 0,
+              width: "100%",
             }}
           >
             <span>Timeframe</span>
-              <div style={{ position: "relative", width: "260px" }}>
+              <div style={{ position: "relative", width: "100%" }}>
 
                 <div
                 onClick={() => setOpenDropdown( !openDropdown)}
                 style={{
                     border: "1px solid #ccc",
-                    padding: "8px 32px 8px 10px",
+                    padding: "0 32px 0 10px",
+                    display: "flex",
+                    alignItems: "center",
                     cursor: "pointer",
                     borderRadius: "4px",
                     background: "white",
-                    height: "32px",
+                    height: "50px",
+                    boxSizing: "border-box",
                     position: "relative"
                 }}
                 >
@@ -690,7 +690,9 @@ const itemStyle = {
                     style={{
                         position: "absolute",
                         top: "40px",
-                        width: "500px",
+                        width: "min(500px, 90vw)",
+                        maxWidth: "90vw",
+                        boxSizing: "border-box",
                         backgroundColor: "#fff",
                         border: "1px solid #ddd",
                         borderRadius: "4px",
@@ -845,15 +847,12 @@ const itemStyle = {
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex",
+              alignItems: "stretch",
               gap: "4px",
               fontSize: "0.875rem",
-              paddingLeft: "10px",
               color: "#374151",
-              minWidth: "180px",
-              height: "52px"
-              
-              
+              minWidth: 0,
+              width: "100%",
             }}
           >
             <span>Currency Pair</span>
@@ -907,12 +906,12 @@ const itemStyle = {
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex-start",
-              gap: "0.25rem",
+              alignItems: "stretch",
+              gap: "4px",
               fontSize: "0.875rem",
               color: "#374151",
-               minWidth: "160px",
-            paddingLeft: "10px"
+              minWidth: 0,
+              width: "100%",
             }}
           >
             <span>SalesPerson</span>
@@ -929,10 +928,8 @@ const itemStyle = {
                         fontSize: "14px",
                         borderRadius: "8px",
                         border: "1px solid #ccc",
-                        minWidth: "180px",
-                        cursor: "pointer",
-                        gap: "12px"
-            
+                        width: "100%",
+                        boxSizing: "border-box",
                         }}                 
                     />
              
@@ -942,12 +939,12 @@ const itemStyle = {
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex-start",
-              gap: "0.25rem",
+              alignItems: "stretch",
+              gap: "4px",
               fontSize: "0.875rem",
               color: "#374151",
-               minWidth: "160px",
-               paddingLeft: "10px"
+              minWidth: 0,
+              width: "100%",
             }}
           >
             <span>CIF</span>
@@ -959,15 +956,13 @@ const itemStyle = {
                 }
                     placeholder="Enter CIF..."  
                     style={{
-                        height: "52px",
+                        height: "50px",
                         padding: "0 14px",
                         fontSize: "14px",
                         borderRadius: "8px",
                         border: "1px solid #ccc",
-                        minWidth: "180px",
-                        cursor: "pointer",
-                        gap: "12px"
-            
+                        width: "100%",
+                        boxSizing: "border-box",
                         }}                 
                     />
         </label>
@@ -976,12 +971,12 @@ const itemStyle = {
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex-start",
-              gap: "0.25rem",
+              alignItems: "stretch",
+              gap: "4px",
               fontSize: "0.875rem",
               color: "#374151",
-               minWidth: "160px",
-               paddingLeft: "10px"
+              minWidth: 0,
+              width: "100%",
             }}
           >
             <span>Account</span>
@@ -991,31 +986,28 @@ const itemStyle = {
                     onChange={(e) => setFilters({ ...filters, account: e.target.value })}
                     placeholder="Enter Account"     
                      style={{
-                        height: "52px",
+                        height: "50px",
                         padding: "0 14px",
                         fontSize: "14px",
                         borderRadius: "8px",
                         border: "1px solid #ccc",
-                        minWidth: "180px",
-                        cursor: "pointer"
-            
+                        width: "100%",
+                        boxSizing: "border-box",
         }}                
                     />
           </label>
         
           <div style={{
-              minWidth: "200px",
+              minWidth: 0,
+              width: "100%",
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex-start",
-              gap: "0.25rem",
+              alignItems: "stretch",
+              gap: "4px",
               fontSize: "0.875rem",
               color: "#374151",
-              paddingLeft: "10px"
-              
-              
             }}>
-           <div style={{ width: "180px" }}>
+           <div style={{ width: "100%" }}>
             <MultiSelect
                     label="Error Code"
                     options={ERROR_CODES}
@@ -1189,7 +1181,6 @@ const itemStyle = {
 
                         }}
                         >
-                            <div style={{ minWidth: "1200px" }}>
                        <DataTable
                                     dense
                                     columns={quoteReqTableCol}
@@ -1207,7 +1198,6 @@ const itemStyle = {
                                         :{}
                                     }
                                     />
-                                    </div>
                                     </div>
                 </Box>
                 )}
