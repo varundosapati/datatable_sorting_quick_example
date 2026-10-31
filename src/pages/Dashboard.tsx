@@ -14,31 +14,39 @@ import TimeFramePicker from "../components/TimeframePicker";
 import ExportMenu from "../components/ExportMenu";
 import { downloadCsv, rowsToCsv } from "../utils/csvExport";
 import { Download } from "lucide-react";
+import responseData from "../../public/mock/filterResponse.json";
+
+import {
+    filterDashboardData,
+    type DashboardRecord
+} from "../utils/filterDashboardData";
+import { items, value } from "happy-dom/lib/PropertySymbol";
 
 
 
 
 const outerBoxStyle = {
-  display: "block",
-  width: "100%",
-  maxWidth: "100%",
-  overflow: "hidden",
-  px: 1,
-  py: 0.5,
-  
+    display: "block",
+    width: "100%",
+    maxWidth: "100%",
+    overflow: "hidden",
+    p1: 0,
+    pr: 1,
+    py: 0.5,
+
 }
 
 const exportCsvButtonStyle: CSSProperties = {
-  display:"inline-flex",
-  fontSize: "0.85rem",
-  borderRadius: "6px",
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#111827",
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-  justifyContent: "center",
-  alignItems: "center",
+    display:"inline-flex",
+    fontSize: "0.85rem",
+    borderRadius: "6px",
+    border: "1px solid #d1d5db",
+    background: "#ffffff",
+    color: "#111827",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    justifyContent: "center",
+    alignItems: "center",
 };
 
 const quoteReqbyErrCodeCol = [
@@ -94,9 +102,43 @@ const bookedTradeBlotterCol = [
                                 { key: "sellCurrency", header: "Sell Currency" },
                                 { key: "sellAmount", header: "Sell Amount", render: (row: any) => formatAmount(row.sellAmount) },
                                 { key: "valueDate", header: "Value Date" },
-                                { key: "revenueMargin", header: "Revenue/Margin" }
+                                { key: "revenueMargin", header: "Revenue/Margin" } ]
 
-                ]
+const derivativesBlotterCol = [
+                                { key: "teamCode", header: "Team Code" },
+                                { key: "salesPerson", header: "SalesPerson" },
+                                { key: "client", header: "Client" },
+                                { key: "user", header: "User" },
+                                { key: "phone", header: "Phone" },
+                                { key: "email", header: "Email" },
+                                { key: "cif", header: "CIF" },
+                                { key: "account", header: "Account" },
+                                { key: "timestamp", header: "TimeStamp" },
+                                { key: "channelCode", header: "Channel Code" },
+                                { key: "productType", header: "Product" },
+                                { key: "wssDealNumber", header: "WSS Deal Number" },
+                                { key: "tradeDate", header: "Trade Date" },
+                                { key: "buyCurrency", header: "Buy Currency" },
+                                { key: "buyAmount", header: "Buy Amount", render: (row: any) => formatAmount(row.buyAmount) },
+                                { key: "rate", header: "Rate" },
+                                { key: "sellCurrency", header: "Sell Currency" },
+                                { key: "sellAmount", header: "Sell Amount", render: (row: any) => formatAmount(row.sellAmount) },
+                                { key: "valueDate", header: "Value Date" },
+                                { key: "ndfFixingDate", header: "NDF Fixing Date" },
+                                { key: "optionDeliveryDate", header: "Option Delivery Date" },
+                                
+                                { key: "timeOptionRemainingCcy1Amount", header: "Time Option Remaining CCY 1 Amount",
+                                    render: (row: any) =>
+                                        formatAmount(row.timeOptionRemainingCcyAmount),
+                                 },
+
+                                 { key: "timeOptionRemainingCcy2Amount", header: "Time Option Remaining CCY 2 Amount",
+                                    render: (row: any) =>
+                                        formatAmount(row.timeOptionRemainingCcy2Amount),
+                                 },
+
+
+                                { key: "revenueMargin", header: "Revenue/Margin" }];
 
 const svbGoFileUploadCol = [
                      { key: "teamCode", header: "Team Code" },
@@ -169,6 +211,18 @@ function formatCurrency(revenue: any) {
         }).format(revenue);
 }
 
+type StaticFilterData = {
+    static_data: {
+        sales_team: {
+            team_name: string;
+            team_codes: string[];
+        }[];
+        channel: string[];
+        currency_pair: string[];
+        error_code: string[];
+    };
+};
+
 
 export default function Dashboard({ selectedView }: {selectedView: string}) {
     const [filters, setFilters] = useState<DashboardFilters>({
@@ -185,7 +239,10 @@ export default function Dashboard({ selectedView }: {selectedView: string}) {
         endDate: "",
         selectedCurrencies: [],
         
-    });    
+    });   
+    
+const [staticFilterData, setStaticFilterData] = 
+    useState<StaticFilterData["static_data"] | null>(null);    
 const [openDropdown, setOpenDropdown] = useState(false);
 const [openDateRange, setOpenDateRange] = useState(false);
 const [selectedRow, setSelectedRow] =useState<any>(null);
@@ -221,6 +278,183 @@ const handleRowClick = (row: any) => {
     });
     
 };
+
+const [allRecord, setAllRecord] = 
+useState<DashboardRecord[]>([]);
+
+const [dataloading, setDataLoading] = useState(true);
+
+const [dataError, setDataError] = 
+useState<string | null>(null);
+
+useEffect(() => {
+    let active =  true;
+
+    const loadJsonData = async () => {
+        try {
+            const response = await fetch(
+                "mock/filterResponse.json"
+            );
+
+            if(!response.ok) {
+                throw new Error(
+                    `Failed to load JSON: ${response.status}`
+                );
+            }
+
+            const result: { trades: DashboardRecord[] } =
+            await response.json();
+
+            if (active) {
+                setAllRecord(result.trades);
+                setDataError(null);
+            }
+        } catch (error) {
+            console.error("JSON loading error:", error);
+
+            if(active) {
+                setDataError("Unable to load Dashboard Json");
+            }
+        } finally {
+            if(active) {
+                setDataLoading(false);
+            }
+        }
+        };
+        loadJsonData();
+
+        return () => {
+            active = false;
+        };
+    
+}, []);
+
+
+const filteredRecords = filterDashboardData(
+    allRecord,
+    filters
+);
+
+const quoteTableRecords = filteredRecords;
+
+const quoteRecords = filteredRecords.filter(
+    record => record.api_error_type === "quote"
+);
+
+const bookingRecords = filteredRecords.filter(
+    record => record.api_error_type === "book"
+);
+
+const buildQuoteTableRows = (records: DashboardRecord[]) => {
+    const grouped = new Map<string, {
+        teamCode: string;
+        salesPerson: string;
+        client: string;
+        user: string;
+        phone: string;
+        email: string;
+        cif: number;
+        account: string;
+        timestamp: string;
+        channelCode: string;
+        indicative: string;
+        executable: string;
+        wssDealNumber: number;
+        buyCcy: string;
+        buyAmt: number;
+        sellCcy: string;
+        sellAmt:number;
+        revenueMargin:number;
+    }>();
+
+    records.forEach(record => {
+        const key = [
+            record.team_code,
+            record.sales_person,
+            record.client_name,
+            record.user_name,
+            record.user_phone,
+            record.user_email,
+            record.customer_number,
+            record.account,
+            record.timestamp,
+            record.source_system,
+            record.quote_request_initiated,
+            record.book_request_initiated,
+            record.deal_number,
+            record.buy_currency,
+            record.buy_amount,
+            record.sell_currency,
+            record.sell_amount,
+            record.revenue
+        ].join("|");
+
+        grouped.set(key, {
+            teamCode: record.team_code ?? "",
+            salesPerson: record.sales_person ?? "",
+            client: record.client_name ?? "",
+            user: record.user_name ?? "",
+            phone: record.user_phone ?? "",
+            email: record.user_email ?? "",
+            cif: record.customer_number ? Number(record.customer_number): 0,
+            account: record.account ?? "",
+            timestamp: record.timestamp ?? "",
+            channelCode: record.source_system ?? "",
+            indicative: record.quote_request_initiated ?? "",
+            executable: record.book_request_initiated ?? "",
+            wssDealNumber: record.deal_number ? Number(record.deal_number): 0,
+            buyCcy: record.buy_currency ?? "",
+            buyAmt: record.buy_amount ? Number(record.buy_amount): 0,
+            sellCcy: record.sell_currency ?? "",
+            sellAmt: record.sell_amount ? Number(record.sell_amount): 0,
+            revenueMargin: record.revenue ? Number(record.revenue): 0,
+        });
+
+    });
+    return Array.from(grouped.values());
+};
+
+
+
+const buildErrorRows = (records: DashboardRecord[]) => {
+    const grouped = new Map<string, {
+        errorCode: string;
+        errorDescription: string;
+        sourceService: string;
+        channel: string;
+        count: number;
+    }>();
+
+    records.forEach(record => {
+        const key = [
+            record.error_code,
+            record.error_description,
+            record.source_system,
+            record.source_service
+        ].join("|");
+
+        const existing = grouped.get(key);
+
+        if(existing) {
+            existing.count +=1;
+        } else {
+            grouped.set(key, {
+                errorCode: record.error_code ?? "",
+                errorDescription: record.error_description ?? "",
+                sourceService: record.source_service ?? "",
+                channel: record.source_system ?? "",
+                count: 1
+            });
+        }
+    });
+    return Array.from(grouped.values());
+};
+
+
+const filteredQuoteRows = buildErrorRows(quoteRecords);
+const filteredBookRows = buildErrorRows(bookingRecords);
+const filteredQuoteTableRows = buildQuoteTableRows(quoteTableRecords);
+
 
 const mockRequestData = [
     { requestId: "REQ001", status: "SUCCESS", timestamp: "2026-04-01 10:00" },
@@ -325,8 +559,8 @@ const itemStyle = {
             const matchCurrency = 
             blotterFilters.selectedCurrencies.length === 0 ||
             (
-            row.sellCurrency === base &&
-            row.buyCurrency === quote
+            row.buyCurrency === base &&
+            row.sellCurrency === quote
             ) ;
 
             const matchChannel = 
@@ -385,6 +619,35 @@ const itemStyle = {
         });
     }, [filters]);
 
+    useEffect(() => {
+        let active = true;
+
+        const loadSaticFilters = async () => {
+            try {
+                const response = await fetch("/mock/filterOptions.json");
+
+                if(!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
+                }
+
+                const json: StaticFilterData = await response.json();
+
+                if(active) {
+                    setStaticFilterData(json.static_data);
+                    console.log("Static Filter Data:", json.static_data);
+                }
+            } catch (error) {
+                console.error("Error loading static filter:", error);
+            }
+        };
+
+        loadSaticFilters();
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
     const applyPresetGroup = (groupName: string) => {
         const codes = TEAM_PRESET_GROUPS[groupName] ?? [];
         setFilters({...filters,teamcodes:codes});
@@ -430,813 +693,820 @@ const itemStyle = {
  return (
             <>
             <div id="dashboard-content">
-      <div style={{ width: "100%", overflow: "visible"}}>
-     <div className="topbar">
-      <div
-      style={{
-        display:"flex",
-        alignItems:"center",
-        justifyContent:"space-between",
-        flexWrap:"wrap",
-        gap: "1rem",
-        padding:"8px 16px",
-        fontSize:"1.05rem",
-      }}>
-                <div className="brand">
-                    <Typography variant="h6" component="div" sx={{ variant: "h1", flexGrow: 1, paddingLeft: 1, fontWeight: 'bold', color: 'gray', paddingTop: 2 }}>
-                    FX Channel Monitoring dashboard
-                </Typography>
-                    <div className="actions">
-                    <span className="pill">{loading ? "Refreshing.." : `As of: ${asOfLabel}`} </span>
-                    <button className="preset-button" onClick={() => setEnabled(!enabled)} type="button">
-                        Auto Refresh: {enabled ? "ON" : "OFF"} {enabled ? `(${nextInSec}s)` : ""}
-                    </button>
-                    <button className="btn" onClick={load} type="button">
-                        Manual Refresh
-                    </button>
-                    <div style={{ margin: 10, color: "black", fontSize: 12, textAlign: "left"}} >
-                    Manual refresh +auto refresh every 30 minutes (toggle above).
-                    </div>
-                 </div>
-      </div>
-      <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, minmax(100px, 1fr))",
-                    gap: "1rem",
-                    marginLeft: "auto",
-                   
-                  }}>
- 
-        {kpis.map((k) => (
+                <div style={{ width: "100%", overflow: "visible"}}>
+                    <div className="topbar">
                         <div
                             style={{
-                                background: "#8d9ec7",
-                                border: "1px solid #8d9ec7",
-                                borderRadius: 10,
-                                padding: "10px 14px",
-                                boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
-                                minWidth: "130px"
-                            }}
-                            key={k.label}
-                            >
-                           <div style={{ color: "#ffffff", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                            {k.label}
-                            </div>
-                           <div style={{ color: "#ffffff", fontSize: 22, fontWeight: 700, marginTop: 4 }}>
-                            {k.value}
-                            </div>
-                        </div>
-                        ))}
-        </div>
-                       
-                    <button
-          type="button"
-          onClick={() => setShowFilters((v) => !v)}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "999px",
-            border: "1px solid #d1d5db",
-            background: "#f3f4f6",
-            color: "#111827",
-            fontSize: "0.85rem",
-            cursor: "pointer",
-          }}
-        >
-          {showFilters ? "Hide filters" : "Show filters"}
-        </button>
-
-        <ExportMenu />
-                     
-                </div>
-            </div>
-   <Box sx={{ width: "100%", px: 2}}>
-    <div style={{ display: "flex", flexDirection: "column", width: "100%"}}>
-    {showFilters && (
-        <div
-          style={{
-            marginBottom: "1rem",
-            position: "static",
-            marginTop: "0.1rem",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "#ffffff",
-            borderRadius: "10px",
-            border: "1px solid #e5e7eb",
-            boxSizing: "border-box",
-            width: "100%",
-          }}
-        >
-            <Typography variant="h6" component="div" sx={{ variant: "h1", paddingLeft: 0, fontWeight: 'bold', color: 'gray' }}>
-
-          Filters
-        </Typography>
-         <div
-         style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: "16px",
-            width: "100%",
-         }}   
-         >
-         <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: "4px",
-              fontSize: "0.875rem",
-              color: "#374151",
-              minWidth: 0,
-              width: "100%",
-            }}
-          >
-            <span>Team Code</span>
-       
-                <Select
-                    isMulti
-                        options={TEAM_CODES.map(code => ({
-                            value: code,
-                            label: code
-                        }))}
-
-                        value={filters.teamcodes.map(code => ({
-                            value: code,
-                            label: code
-                        }))}
-
-                        onChange={(selected) =>
-                            setFilters({
-                                ...filters,
-                                teamcodes: selected.map(s => s.value)
-                            })
-                        }
-                        styles={{
-                            valueContainer: (base) => ({
-                                ...base,
-                                display: "block",
-                                flexDirection: "column",
-                                alignItems: "flex-start",
-                                flexWrap: "wrap"
-                                
-                                
-                            }),
-                            multiValue: (base) => ({
-                                ...base,
-                                display: "block",
-                                width: "100%",
-                                margin: "2px 0"
-                            }),
-                            control: (base) => ({
-                                ...base,
-                                minHeight: "20px",
-                                height: "auto", 
-                                alignItems: "flex-start"
-                            })
-
-                        }}
-                        placeholder="ALL"
-             />
-             
-          </label>
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: "4px",
-              fontSize: "0.875rem",
-              color: "#374151",
-              minWidth: 0,
-              width: "100%",
-            }}
-          >
-            <span>Channel</span>
-       
-                <Select
-                    options={CHANNEL.map(channel => ({
-                            value: channel,
-                            label: channel
-                        }))}
-
-                        value={blotterFilters.channel
-                            ? {value: blotterFilters.channel, label: blotterFilters.channel }
-                            : null
-                        }
-
-                        onChange={(selected) => {
-                           
-                            const value = selected?.value || "";
-                            setFilters( prev => ({
-                                ...prev,
-                                channel: value,
-                            }));
-                            setBlotterFilters( prev => ({
-                                ...prev,
-                                channel: value,
-                            }));
-                        }}
-                        styles={{
-                            control: (base) => ({
-                                ...base,
-                                minHeight: "50px"
-                            })
-                        }}
-                        
-                        isClearable
-                        placeholder="ALL"
-                        
-             />
-             
-          </label>
-           <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: "4px",
-              fontSize: "0.875rem",
-              color: "#374151",
-              minWidth: 0,
-              width: "100%",
-            }}
-          >
-            <span>Timeframe</span>
-              <div style={{ position: "relative", width: "100%" }}>
-
-                <div
-                onClick={() => setOpenDropdown( !openDropdown)}
-                style={{
-                    border: "1px solid #ccc",
-                    padding: "0 32px 0 10px",
-                    display: "flex",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    background: "white",
-                    height: "50px",
-                    boxSizing: "border-box",
-                    position: "relative"
-                }}
-                >
-                    {filters.timeframe === "custom" ? "Date Range" : filters.timeframe?.replaceAll("_"," ") || "Select"}
-                </div>
-
-                <span style={{ position: "absolute", right: "10px", top: "20%", transform: "translate(-50%)", pointerEvents: "none", fontSize: "12px"}}>▼</span>
-                {openDropdown && (
-                    <div
-                    style={{
-                        position: "absolute",
-                        top: "40px",
-                        width: "min(500px, 90vw)",
-                        maxWidth: "90vw",
-                        boxSizing: "border-box",
-                        backgroundColor: "#fff",
-                        border: "1px solid #ddd",
-                        borderRadius: "4px",
-                        zIndex: 9999,
-                        padding: "10px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                        pointerEvents: "auto"
-                        
-                    }}
-                    >
-                        <div style={{padding: "8px", fontWeight: "bold", background: "#f3f4f6" }}>Relative</div>
-                        {[
-                            { value: "today", label: "Today"},
-                            { value: "week_to_date", label: "Week To Date" },
-                            { value: "business_week_to_date", label: "Business Week To Date" },
-                            { value: "Previous_Year", label: "Previous Year" }
-                        ].map((item) => (
-                            <div
-                            key={item.value}
-                            onClick={() => {
-                                setFilters({ ...filters, timeframe: item.value });
-                                setOpenDropdown(false);
-                            }}
-                            style={itemStyle}
-                            >
-                                {item.label}
-                                </div>
-                        ))}
-
-                        <div style={{padding: "8px", fontWeight: "bold", background: "#f3f4f6" }}>Last X</div>
-                        {[
-                            { value: "last_15_mins", label: "Last 15 mins"},
-                            { value: "last_60_mins", label: "Last 60 mins" },
-                            { value: "last_4_hours", label: "Last 4 hours" },
-                            { value: "last_24_hours", label: "Last 24 hours" }
-                        ].map((item) => (
-                            <div
-                            key={item.value}
-                            onClick={() => {
-                                setFilters({ ...filters, timeframe: item.value });
-                                setOpenDropdown(false);
-                            }}
-                            style={itemStyle}
-                            >
-                                {item.label}
-                                </div>
-                        ))}
-                        <div
-                        onClick={() => setOpenDateRange(!openDateRange)}
-                        style={{
-                            ...itemStyle,
-                            fontWeight: "bold",
-                            background: "#f3f4f6"
-                        }}
-                        >
-                             Date Range
-                             </div>
-
-                        {openDateRange && (
-                            <div style={{ padding: "10px", borderTop: "1px solid #eee" }}>
-                        <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-
-                        <input
-                        type="datetime-local"
-                        value={filters.startDate || ""}
-                        onChange={(e) =>
-                            setFilters({
-                                ...filters,
-                                startDate: e.target.value,
-                                timeframe: "custom"
-                            })
-                        }
-                        style={{ flex:1 }}
-                        />
-
-                        <span>to</span>
-                        
-                 <input
-                        type="datetime-local"
-                        value={filters.endDate || ""}
-                        onChange={(e) =>
-                            setFilters({
-                                ...filters,
-                                endDate: e.target.value,
-                                timeframe: "custom"
-                            })
-                        }
-                        style={{ flex: 1 }}
-                    />
-                    </div>
-                       
-                        
-
-                    <div
-                    style={{
-                        display: "flex",
-                        gap: "10px",
-                        marginTop: "10px",
-                    }}
-                    >
-                        <button
-                        onClick={() => {
-                            setFilters({
-                                ...filters,
-                                timeframe: "",
-                                startDate: "",
-                                endDate: "",
-                            });
-                            
-                        }}
-                        style={{
-                            flex: 1,
-                            padding: "8px",
-                            background: "#e0e0e0",
-                            color: "#333",
-                            borderRadius: "4px",
-                            border: "none",
-                            cursor: "pointer"
-                        }}
-                        >
-                            Clear
-                        </button> 
-                        <button
-                        onClick={() => {
-                            console.log("Apply Date Range:", filters);
-                            setOpenDropdown(false);
-                            setOpenDateRange(false);
-                           // load();
-                        }}
-                        style={{
-                            flex: 1,
-                            padding: "8px",
-                            background: "#111827",
-                            color: "white",
-                            borderRadius: "4px",
-                            border: "none",
-                            cursor: "pointer"
-                        }}
-                        >
-                            Apply
-                        </button> 
-                        </div>
-                        </div>
-                        
-                )}
-            </div>
-                )}
-                </div>   
-          </label>
-
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: "4px",
-              fontSize: "0.875rem",
-              color: "#374151",
-              minWidth: 0,
-              width: "100%",
-            }}
-          >
-            <span>Currency Pair</span>
-       
-                <Select
-                    options={CURRENCYPAIR.map(currencyPair => ({
-                            value: currencyPair,
-                            label: currencyPair
-                        }))}
-
-                        value={blotterFilters.currencyPair
-                            ? {value: blotterFilters.currencyPair, label: blotterFilters.currencyPair }
-                            : null
-                        }
-
-                        onChange={(selected) => {
-                            if (!selected) {
-                            setBlotterFilters({
-                                channel: "",
-                                currencyPair: "",
-                                selectedCurrencies: [] as string[],
-                            });
-                            return;
-                        }
-                            const value = selected?.value || "";
-                            setFilters( prev => ({
-                                ...prev,
-                                currencyPair: value,
-                            }));
-                            setBlotterFilters( prev => ({
-                                ...prev,
-                                currencyPair: value,
-                            }));
-                        }}
-                        
-                        styles={{
-                            control: (base) => ({
-                                ...base,
-                                minHeight: "50px"
-                            })
-                        }}
-                        
-                        isClearable
-                        placeholder="ALL"
-                        
-             />
-             
-          </label>
-
-          <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: "4px",
-              fontSize: "0.875rem",
-              color: "#374151",
-              minWidth: 0,
-              width: "100%",
-            }}
-          >
-            <span>SalesPerson</span>
-       
-                  <input className="filter-input"
-                    value={filters.salesPerson}
-                    onChange={(e) => 
-                        setFilters({ ...filters, salesPerson: e.target.value })
-                }
-                    placeholder="Enter SalesPerson..."  
-                    style={{
-                        height: "50px",
-                        padding: "0 14px",
-                        fontSize: "14px",
-                        borderRadius: "8px",
-                        border: "1px solid #ccc",
-                        width: "100%",
-                        boxSizing: "border-box",
-                        }}                 
-                    />
-             
-          </label>
-
-         <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: "4px",
-              fontSize: "0.875rem",
-              color: "#374151",
-              minWidth: 0,
-              width: "100%",
-            }}
-          >
-            <span>CIF</span>
-
-                    <input className="filter-input"
-                    value={filters.cif}
-                    onChange={(e) => 
-                        setFilters({ ...filters, cif: e.target.value })
-                }
-                    placeholder="Enter CIF..."  
-                    style={{
-                        height: "50px",
-                        padding: "0 14px",
-                        fontSize: "14px",
-                        borderRadius: "8px",
-                        border: "1px solid #ccc",
-                        width: "100%",
-                        boxSizing: "border-box",
-                        }}                 
-                    />
-        </label>
-
-                 <label
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: "4px",
-              fontSize: "0.875rem",
-              color: "#374151",
-              minWidth: 0,
-              width: "100%",
-            }}
-          >
-            <span>Account</span>
-
-                     <input className="filter-input"
-                    value={filters.account}
-                    onChange={(e) => setFilters({ ...filters, account: e.target.value })}
-                    placeholder="Enter Account"     
-                     style={{
-                        height: "50px",
-                        padding: "0 14px",
-                        fontSize: "14px",
-                        borderRadius: "8px",
-                        border: "1px solid #ccc",
-                        width: "100%",
-                        boxSizing: "border-box",
-        }}                
-                    />
-          </label>
-        
-          <div style={{
-              minWidth: 0,
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: "4px",
-              fontSize: "0.875rem",
-              color: "#374151",
-            }}>
-           <div style={{ width: "100%" }}>
-            <MultiSelect
-                    label="Error Code"
-                    options={ERROR_CODES}
-                    value={filters.errorCodes}
-                    onChange={(v) => setFilters({ ...filters, errorCodes: v})}
-                    placeholder="ALL"   
-                    />
-                    </div>
-            </div>
-
-        </div>
-        </div>
-        
-    
-    )}
-
-         
-        {selectedView === "quoteErrors" && (
-        
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "2px",
-            padding: "10px"
-            
-          }}
-          >
-            <Box sx={outerBoxStyle}>
-                    <Banner title="Quote Request Errors By Error Code and Channel"  
-                    information= "Displays all quote requests that resulted in an error, broken down by error code and channel."
-                        action={
-           <button
-            type="button"
-            className="export-btn"
-            style={exportCsvButtonStyle}
-            title="Export CSV"
-            aria-label="Export users to CSV"
-            onClick={() =>
-              downloadCsv(
-                "quoteRequestErrors.csv",
-                rowsToCsv(
-                  csvColumnDefs(quoteReqbyErrCodeCol),
-                  applyFilters(data?.quoteRequestErrors ?? []) as unknown as Record<string, unknown>[]
-                )
-              )
-            }
-          >
-            <Download size={18} strokeWidth={2} aria-hidden />
-          </button>
-                        }
-                        />
-                        
-                       <DataTable
-                                    dense
-                                    columns={quoteReqbyErrCodeCol}
-                                    rows={applyFilters(data?.quoteRequestErrors ?? [])}
-                                    pageSize={10}
-                                    />
-                </Box>
-  
-            <Box sx={outerBoxStyle}>
-                    <Banner title="Booking Request Errors By Error Code and Channel"  
-                    information= "Displays trades that received a quote but failed to book into WallStreet Systems (WSS), categorized by error code and channel."
-                        action={
-           <button
-            type="button"
-            className="export-btn"
-            style={exportCsvButtonStyle}
-            title="Export CSV"
-            aria-label="Export users to CSV"
-            onClick={() =>
-              downloadCsv(
-                "bookingRequestErrors.csv",
-                rowsToCsv(
-                  csvColumnDefs(bookingReqbyErrCodeCol),
-                  applyFilters(data?.bookingRequestErrors ?? []) as unknown as Record<string, unknown>[]
-                )
-              )
-            }
-          >
-            <Download size={18} strokeWidth={2} aria-hidden />
-          </button>
-                        }
-                        />
-                       <DataTable
-                                    dense
-                                    columns={bookingReqbyErrCodeCol}
-                                    rows={applyFilters(data?.bookingRequestErrors ?? [])}
-                                    pageSize={10}
-                                    />
-                </Box>
-                </div>
-
-                                )}
-        
-          
-  
-   
-{selectedView === "currencyPair" && (
-                   <Box sx={outerBoxStyle}>
-                    <Banner title="Quote Request By Currency Pair and Channel"  
-                    information= "Displays quote request details and volume by currency pair and channel across all digital platforms."
-                        action={
-           <button
-            type="button"
-            className="export-btn"
-            style={exportCsvButtonStyle}
-            title="Export CSV"
-            aria-label="Export users to CSV"
-            onClick={() =>
-              downloadCsv(
-                "quoteReqByPairChannel.csv",
-                rowsToCsv(
-                  csvColumnDefs(quoteReqbyCurrncyPairCol),
-                  applyFilters(data?.quoteReqByPairChannel ?? []) as unknown as Record<string, unknown>[]
-                )
-              )
-            }
-          >
-            <Download size={18} strokeWidth={2} aria-hidden />
-          </button>
-                        }
-                        
-                        />
-                       <DataTable
-                                    dense
-                                    columns={quoteReqbyCurrncyPairCol}
-                                    rows={data?.quoteReqByPairChannel ?? []}
-                                    pageSize={10}
-                                    onRowClick={handleRowClick}
-                                    />
-                </Box>
-)}
-  <div
-          style={{
-            display: "grid",
-            gap: "2px"
-            
-            
-          }}>
-         
-            {selectedView === "quotetable" && (
-                <Box sx={outerBoxStyle}>
-                    <Banner title="Quote Request"  
-                    information= "Displays all indicative and executable quote requests, including whether each resulted in a successfully booked trade."
-                        action={
-           <div
-            // type="button"
-            className="export-btn"
-            style={exportCsvButtonStyle}
-            title="Export CSV"
-            aria-label="Export users to CSV"
-            onClick={() =>
-              downloadCsv(
-                "quoteRequests.csv",
-                rowsToCsv(
-                  csvColumnDefs(quoteReqTableCol),
-                  applyFilters(data?.quoteRequests ?? []) as unknown as Record<string, unknown>[]
-                )
-              )
-            }
-          >
-            <Download size={18} strokeWidth={2} aria-hidden />
-          </div>
-                        }
-                        />
-                        <div
-                        style={{
-                            width: "100%"
-
-                        }}
-                        >
-                       <DataTable
-                                    dense
-                                    columns={quoteReqTableCol}
-                                    rows={applyFilters(data?.quoteRequests ?? [])}
-                                    pageSize={10}
-                                    getRowStyle={(row: any) =>
-                                        row.indicative === "Executable" &&
-                                        row.executable === "Yes" &&
-                                        (!row.wssDealNumber ||
-                                        row.wssDealNumber.toString().trim() === "")
-                                        ? {
-                                            backgroundColor: "#ffe5e5",
-                                            BorderLeft: "4px solid red",
-                                        }
-                                        :{}
-                                    }
-                                    />
+                                display:"flex",
+                                alignItems:"center",
+                                justifyContent:"space-between",
+                                flexWrap:"wrap",
+                                gap: "1rem",
+                                padding:"8px 16px",
+                                fontSize:"1.05rem",
+                            }}>
+                            <div className="brand">
+                                <Typography variant="h6" component="div" sx={{ variant: "h1", flexGrow: 1, paddingLeft: 1, fontWeight: 'bold', color: 'gray', paddingTop: 2 }}>
+                                    FX Channel Monitoring dashboard
+                                </Typography>
+                                <div className="actions">
+                                    <span className="pill">{loading ? "Refreshing.." : `As of: ${asOfLabel}`} </span>
+                                    <button className="preset-button" onClick={() => setEnabled(!enabled)} type="button">
+                                        Auto Refresh: {enabled ? "ON" : "OFF"} {enabled ? `(${nextInSec}s)` : ""}
+                                    </button>
+                                    <button className="btn" onClick={load} type="button">
+                                        Manual Refresh
+                                    </button>
+                                    <div style={{ margin: 10, color: "black", fontSize: 12, textAlign: "left"}} >
+                                        Manual refresh +auto refresh every 30 minutes (toggle above).
                                     </div>
-                </Box>
-                )}
-                </div>
- <div
-          style={{
-            display: "grid",
-            gap: "2px"
-            
-          }}>
-                 
-      {selectedView === "tradeBlotter" && (
-                <Box sx={outerBoxStyle}>
-                    <Banner title="Booked Trade Blotter"  
-                    information= "Displays all successfully booked trades across all digital channels."
-                       action={
-           <button
-            type="button"
-            className="export-btn"
-            style={exportCsvButtonStyle}
-            title="Export CSV"
-            aria-label="Export users to CSV"
-            onClick={() =>
-              downloadCsv(
-                "bookTrades.csv",
-                rowsToCsv(
-                  csvColumnDefs(bookedTradeBlotterCol),
-                  applyFilters(data?.bookTrades ?? []) as unknown as Record<string, unknown>[]
-                )
-              )
-            }
-          >
-            <Download size={18} strokeWidth={2} aria-hidden />
-          </button>
-                        }
-                       />
-                        <div
-                        style={{
-                            width: "100%"
+                                </div>
+                            </div>
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(2, minmax(100px, 1fr))",
+                                    gap: "1rem",
+                                    marginLeft: "auto",
+
+                                }}>
+
+                                {kpis.map((k) => (
+                                    <div
+                                        style={{
+                                            background: "#8d9ec7",
+                                            border: "1px solid #8d9ec7",
+                                            borderRadius: 10,
+                                            padding: "10px 14px",
+                                            boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
+                                            minWidth: "130px"
+                                        }}
+                                        key={k.label}
+                                    >
+                                        <div style={{ color: "#ffffff", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                                            {k.label}
+                                        </div>
+                                        <div style={{ color: "#ffffff", fontSize: 22, fontWeight: 700, marginTop: 4 }}>
+                                            {k.value}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowFilters((v) => !v)}
+                                style={{
+                                    padding: "6px 12px",
+                                    borderRadius: "999px",
+                                    border: "1px solid #d1d5db",
+                                    background: "#f3f4f6",
+                                    color: "#111827",
+                                    fontSize: "0.85rem",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                {showFilters ? "Hide filters" : "Show filters"}
+                            </button>
+
+                            <ExportMenu />
+
+                        </div>
+                    </div>
+                    <Box sx={{ width: "100%", px: 2}}>
+                        <div style={{ display: "flex", flexDirection: "column", width: "100%"}}>
+                            {showFilters && (
+                                <div
+                                    style={{
+                                        marginBottom: "1rem",
+                                        position: "static",
+                                        marginTop: "0.1rem",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "12px",
+                                        padding: "12px 16px",
+                                        background: "#ffffff",
+                                        borderRadius: "10px",
+                                        border: "1px solid #e5e7eb",
+                                        boxSizing: "border-box",
+                                        width: "100%",
+                                    }}
+                                >
+                                    <Typography variant="h6" component="div" sx={{ variant: "h1", paddingLeft: 0, fontWeight: 'bold', color: 'gray' }}>
+
+                                        Filters
+                                    </Typography>
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                                            gap: "16px",
+                                            width: "100%",
+                                        }}
+                                    >
+                                        <label
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "stretch",
+                                                gap: "4px",
+                                                fontSize: "0.875rem",
+                                                color: "#374151",
+                                                minWidth: 0,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <span>Team Code</span>
+
+                                            <Select
+                                                isMulti
+                                                options={(staticFilterData?.sales_team ?? []).map(team => ({
+                                                    value: team.team_name,
+                                                    label: team.team_name
+                                                    
+                                                }))}
+
+                                                value={filters.teamcodes.map(code => ({
+                                                    value: code,
+                                                    label: code
+                                                }))}
+
+                                                onChange={(selected) =>
+                                                    setFilters({
+                                                        ...filters,
+                                                        teamcodes: selected.map(s => s.value)
+                                                    })
+                                                }
+                                                styles={{
+                                                    valueContainer: (base) => ({
+                                                        ...base,
+                                                        display: "block",
+                                                        flexDirection: "column",
+                                                        alignItems: "flex-start",
+                                                        flexWrap: "wrap"
+
+
+                                                    }),
+                                                    multiValue: (base) => ({
+                                                        ...base,
+                                                        display: "block",
+                                                        width: "100%",
+                                                        margin: "2px 0"
+                                                    }),
+                                                    control: (base) => ({
+                                                        ...base,
+                                                        minHeight: "20px",
+                                                        height: "auto",
+                                                        alignItems: "flex-start"
+                                                    })
+
+                                                }}
+                                                placeholder="ALL"
+                                            />
+
+                                        </label>
+                                        <label
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "stretch",
+                                                gap: "4px",
+                                                fontSize: "0.875rem",
+                                                color: "#374151",
+                                                minWidth: 0,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <span>Channel</span>
+
+                                            <Select
+                                                options={(staticFilterData?.channel ?? []).map(channel => ({
+                                                    value: channel,
+                                                    label: channel
+                                                }))}
+
+                                                value={blotterFilters.channel
+                                                    ? {value: blotterFilters.channel, label: blotterFilters.channel }
+                                                    : null
+                                                }
+
+                                                onChange={(selected) => {
+
+                                                    const value = selected?.value || "";
+                                                    setFilters( prev => ({
+                                                        ...prev,
+                                                        channel: value,
+                                                    }));
+                                                    setBlotterFilters( prev => ({
+                                                        ...prev,
+                                                        channel: value,
+                                                    }));
+                                                }}
+                                                styles={{
+                                                    control: (base) => ({
+                                                        ...base,
+                                                        minHeight: "50px"
+                                                    })
+                                                }}
+
+                                                isClearable
+                                                placeholder="ALL"
+
+                                            />
+
+                                        </label>
+                                        <label
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "stretch",
+                                                gap: "4px",
+                                                fontSize: "0.875rem",
+                                                color: "#374151",
+                                                minWidth: 0,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <span>Timeframe</span>
+                                            <div style={{ position: "relative", width: "100%" }}>
+
+                                                <div
+                                                    onClick={() => setOpenDropdown( !openDropdown)}
+                                                    style={{
+                                                        border: "1px solid #ccc",
+                                                        padding: "0 32px 0 10px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        cursor: "pointer",
+                                                        borderRadius: "4px",
+                                                        background: "white",
+                                                        height: "50px",
+                                                        boxSizing: "border-box",
+                                                        position: "relative"
+                                                    }}
+                                                >
+                                                    {filters.timeframe === "custom" ? "Date Range" : filters.timeframe?.replaceAll("_"," ") || "Select"}
+                                                </div>
+
+                                                <span style={{ position: "absolute", right: "10px", top: "20%", transform: "translate(-50%)", pointerEvents: "none", fontSize: "12px"}}>▼</span>
+                                                {openDropdown && (
+                                                    <div
+                                                        style={{
+                                                            position: "absolute",
+                                                            top: "40px",
+                                                            width: "min(500px, 90vw)",
+                                                            maxWidth: "90vw",
+                                                            boxSizing: "border-box",
+                                                            backgroundColor: "#fff",
+                                                            border: "1px solid #ddd",
+                                                            borderRadius: "4px",
+                                                            zIndex: 9999,
+                                                            padding: "10px",
+                                                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                                                            pointerEvents: "auto"
+
+                                                        }}
+                                                    >
+                                                        <div style={{padding: "8px", fontWeight: "bold", background: "#f3f4f6" }}>Relative</div>
+                                                        {[
+                                                            { value: "today", label: "Today"},
+                                                            { value: "week_to_date", label: "Week To Date" },
+                                                            { value: "business_week_to_date", label: "Business Week To Date" },
+                                                            { value: "Previous_Year", label: "Previous Year" }
+                                                        ].map((item) => (
+                                                            <div
+                                                                key={item.value}
+                                                                onClick={() => {
+                                                                    setFilters({ ...filters, timeframe: item.value });
+                                                                    setOpenDropdown(false);
+                                                                }}
+                                                                style={itemStyle}
+                                                            >
+                                                                {item.label}
+                                                            </div>
+                                                        ))}
+
+                                                        <div style={{padding: "8px", fontWeight: "bold", background: "#f3f4f6" }}>Last X</div>
+                                                        {[
+                                                            { value: "last_15_mins", label: "Last 15 mins"},
+                                                            { value: "last_60_mins", label: "Last 60 mins" },
+                                                            { value: "last_4_hours", label: "Last 4 hours" },
+                                                            { value: "last_24_hours", label: "Last 24 hours" }
+                                                        ].map((item) => (
+                                                            <div
+                                                                key={item.value}
+                                                                onClick={() => {
+                                                                    setFilters({ ...filters, timeframe: item.value });
+                                                                    setOpenDropdown(false);
+                                                                }}
+                                                                style={itemStyle}
+                                                            >
+                                                                {item.label}
+                                                            </div>
+                                                        ))}
+                                                        <div
+                                                            onClick={() => setOpenDateRange(!openDateRange)}
+                                                            style={{
+                                                                ...itemStyle,
+                                                                fontWeight: "bold",
+                                                                background: "#f3f4f6"
+                                                            }}
+                                                        >
+                                                            Date Range
+                                                        </div>
+
+                                                        {openDateRange && (
+                                                            <div style={{ padding: "10px", borderTop: "1px solid #eee" }}>
+                                                                <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+
+                                                                    <input
+                                                                        type="datetime-local"
+                                                                        value={filters.startDate || ""}
+                                                                        onChange={(e) =>
+                                                                            setFilters({
+                                                                                ...filters,
+                                                                                startDate: e.target.value,
+                                                                                timeframe: "custom"
+                                                                            })
+                                                                        }
+                                                                        style={{ flex:1 }}
+                                                                    />
+
+                                                                    <span>to</span>
+
+                                                                    <input
+                                                                        type="datetime-local"
+                                                                        value={filters.endDate || ""}
+                                                                        onChange={(e) =>
+                                                                            setFilters({
+                                                                                ...filters,
+                                                                                endDate: e.target.value,
+                                                                                timeframe: "custom"
+                                                                            })
+                                                                        }
+                                                                        style={{ flex: 1 }}
+                                                                    />
+                                                                </div>
+
+
+
+                                                                <div
+                                                                    style={{
+                                                                        display: "flex",
+                                                                        gap: "10px",
+                                                                        marginTop: "10px",
+                                                                    }}
+                                                                >
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setFilters({
+                                                                                ...filters,
+                                                                                timeframe: "",
+                                                                                startDate: "",
+                                                                                endDate: "",
+                                                                            });
+
+                                                                        }}
+                                                                        style={{
+                                                                            flex: 1,
+                                                                            padding: "8px",
+                                                                            background: "#e0e0e0",
+                                                                            color: "#333",
+                                                                            borderRadius: "4px",
+                                                                            border: "none",
+                                                                            cursor: "pointer"
+                                                                        }}
+                                                                    >
+                                                                        Clear
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            console.log("Apply Date Range:", filters);
+                                                                            setOpenDropdown(false);
+                                                                            setOpenDateRange(false);
+                                                                            // load();
+                                                                        }}
+                                                                        style={{
+                                                                            flex: 1,
+                                                                            padding: "8px",
+                                                                            background: "#111827",
+                                                                            color: "white",
+                                                                            borderRadius: "4px",
+                                                                            border: "none",
+                                                                            cursor: "pointer"
+                                                                        }}
+                                                                    >
+                                                                        Apply
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </label>
+
+                                        <label
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "stretch",
+                                                gap: "4px",
+                                                fontSize: "0.875rem",
+                                                color: "#374151",
+                                                minWidth: 0,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <span>Currency Pair</span>
+
+                                            <Select
+                                                options={(staticFilterData?.currency_pair ?? []).map(pair => ({
+                                                    value: pair,
+                                                    label: pair
+                                                }))}
+
+                                                value={blotterFilters.currencyPair
+                                                    ? {value: blotterFilters.currencyPair, label: blotterFilters.currencyPair }
+                                                    : null
+                                                }
+
+                                                onChange={(selected) => {
+                                                    if (!selected) {
+                                                        setBlotterFilters({
+                                                            channel: "",
+                                                            currencyPair: "",
+                                                            selectedCurrencies: [] as string[],
+                                                        });
+                                                        return;
+                                                    }
+                                                    const value = selected?.value || "";
+                                                    setFilters( prev => ({
+                                                        ...prev,
+                                                        currencyPair: value,
+                                                    }));
+                                                    setBlotterFilters( prev => ({
+                                                        ...prev,
+                                                        currencyPair: value,
+                                                    }));
+                                                }}
+
+                                                styles={{
+                                                    control: (base) => ({
+                                                        ...base,
+                                                        minHeight: "50px"
+                                                    })
+                                                }}
+
+                                                isClearable
+                                                placeholder="ALL"
+
+                                            />
+
+                                        </label>
+
+                                        <label
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "stretch",
+                                                gap: "4px",
+                                                fontSize: "0.875rem",
+                                                color: "#374151",
+                                                minWidth: 0,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <span>SalesPerson</span>
+
+                                            <input className="filter-input"
+                                                   value={filters.salesPerson}
+                                                   onChange={(e) =>
+                                                       setFilters({ ...filters, salesPerson: e.target.value })
+                                                   }
+                                                   placeholder="Enter SalesPerson..."
+                                                   style={{
+                                                       height: "50px",
+                                                       padding: "0 14px",
+                                                       fontSize: "14px",
+                                                       borderRadius: "8px",
+                                                       border: "1px solid #ccc",
+                                                       width: "100%",
+                                                       boxSizing: "border-box",
+                                                   }}
+                                            />
+
+                                        </label>
+
+                                        <label
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "stretch",
+                                                gap: "4px",
+                                                fontSize: "0.875rem",
+                                                color: "#374151",
+                                                minWidth: 0,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <span>CIF</span>
+
+                                            <input className="filter-input"
+                                                   value={filters.cif}
+                                                   onChange={(e) =>
+                                                       setFilters({ ...filters, cif: e.target.value })
+                                                   }
+                                                   placeholder="Enter CIF..."
+                                                   style={{
+                                                       height: "50px",
+                                                       padding: "0 14px",
+                                                       fontSize: "14px",
+                                                       borderRadius: "8px",
+                                                       border: "1px solid #ccc",
+                                                       width: "100%",
+                                                       boxSizing: "border-box",
+                                                   }}
+                                            />
+                                        </label>
+
+                                        <label
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "stretch",
+                                                gap: "4px",
+                                                fontSize: "0.875rem",
+                                                color: "#374151",
+                                                minWidth: 0,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <span>Account</span>
+
+                                            <input className="filter-input"
+                                                   value={filters.account}
+                                                   onChange={(e) => setFilters({ ...filters, account: e.target.value })}
+                                                   placeholder="Enter Account"
+                                                   style={{
+                                                       height: "50px",
+                                                       padding: "0 14px",
+                                                       fontSize: "14px",
+                                                       borderRadius: "8px",
+                                                       border: "1px solid #ccc",
+                                                       width: "100%",
+                                                       boxSizing: "border-box",
+                                                   }}
+                                            />
+                                        </label>
+
+                                        <div style={{
+                                            minWidth: 0,
+                                            width: "100%",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "stretch",
+                                            gap: "4px",
+                                            fontSize: "0.875rem",
+                                            color: "#374151",
+                                        }}>
+                                            <div style={{ width: "100%" }}>
+                                                <MultiSelect
+                                                    label="Error Code"
+                                                    options={(staticFilterData?.error_code ?? []).map(
+                                                        item => item.split(" - ")[0].trim()
+                                                    )}
+
+                                                    
+
+                                                
+                                                    value={filters.errorCodes}
+                                                    onChange={(v) => setFilters({ ...filters, errorCodes: v})}
+                                                    placeholder="ALL"
+                                                />
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+
+                            )}
+
+
+                            {selectedView === "quoteErrors" && (
+
+                                <div
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "repeat(2, 1fr)",
+                                        gap: "2px",
+                                        padding: "10px"
+
+                                    }}
+                                >
+                                    <Box sx={outerBoxStyle}>
+                                        <Banner title="Quote Request Errors By Error Code and Channel"
+                                                information= "Displays all quote requests that resulted in an error, broken down by error code and channel."
+                                                action={
+                                                    <button
+                                                        type="button"
+                                                        className="export-btn"
+                                                        style={exportCsvButtonStyle}
+                                                        title="Export CSV"
+                                                        aria-label="Export users to CSV"
+                                                        onClick={() =>
+                                                            downloadCsv(
+                                                                "quoteRequestErrors.csv",
+                                                                rowsToCsv(
+                                                                    csvColumnDefs(quoteReqbyErrCodeCol),
+                                                                    applyFilters(data?.quoteRequestErrors ?? []) as unknown as Record<string, unknown>[]
+                                                                )
+                                                            )
+                                                        }
+                                                    >
+                                                        <Download size={18} strokeWidth={2} aria-hidden />
+                                                    </button>
+                                                }
+                                        />
+
+                                        <DataTable
+                                            dense
+                                            columns={quoteReqbyErrCodeCol}
+                                            rows={filteredQuoteRows}
+                                            pageSize={10}
+                                        />
+                                    </Box>
+
+                                    <Box sx={outerBoxStyle}>
+                                        <Banner title="Booking Request Errors By Error Code and Channel"
+                                                information= "Displays trades that received a quote but failed to book into WallStreet Systems (WSS), categorized by error code and channel."
+                                                action={
+                                                    <button
+                                                        type="button"
+                                                        className="export-btn"
+                                                        style={exportCsvButtonStyle}
+                                                        title="Export CSV"
+                                                        aria-label="Export users to CSV"
+                                                        onClick={() =>
+                                                            downloadCsv(
+                                                                "bookingRequestErrors.csv",
+                                                                rowsToCsv(
+                                                                    csvColumnDefs(bookingReqbyErrCodeCol),
+                                                                    applyFilters(data?.bookingRequestErrors ?? []) as unknown as Record<string, unknown>[]
+                                                                )
+                                                            )
+                                                        }
+                                                    >
+                                                        <Download size={18} strokeWidth={2} aria-hidden />
+                                                    </button>
+                                                }
+                                        />
+                                        <DataTable
+                                            dense
+                                            columns={bookingReqbyErrCodeCol}
+                                            rows={filteredBookRows}
+                                            pageSize={10}
+                                        />
+                                    </Box>
+                                </div>
+
+                            )}
+
+
+
+
+                            {selectedView === "currencyPair" && (
+                                <Box sx={outerBoxStyle}>
+                                    <Banner title="Quote Request By Currency Pair and Channel"
+                                            information= "Displays quote request details and volume by currency pair and channel across all digital platforms."
+                                            action={
+                                                <button
+                                                    type="button"
+                                                    className="export-btn"
+                                                    style={exportCsvButtonStyle}
+                                                    title="Export CSV"
+                                                    aria-label="Export users to CSV"
+                                                    onClick={() =>
+                                                        downloadCsv(
+                                                            "quoteReqByPairChannel.csv",
+                                                            rowsToCsv(
+                                                                csvColumnDefs(quoteReqbyCurrncyPairCol),
+                                                                applyFilters(data?.quoteReqByPairChannel ?? []) as unknown as Record<string, unknown>[]
+                                                            )
+                                                        )
+                                                    }
+                                                >
+                                                    <Download size={18} strokeWidth={2} aria-hidden />
+                                                </button>
+                                            }
+
+                                    />
+                                    <DataTable
+                                        dense
+                                        columns={quoteReqbyCurrncyPairCol}
+                                        rows={data?.quoteReqByPairChannel ?? []}
+                                        pageSize={10}
+                                        onRowClick={handleRowClick}
+                                    />
+                                </Box>
+                            )}
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gap: "2px"
+
+
+                                }}>
+
+                                {selectedView === "quotetable" && (
+                                    <Box sx={outerBoxStyle}>
+                                        <Banner title="Quote Request"
+                                                information= "Displays all indicative and executable quote requests, including whether each resulted in a successfully booked trade."
+                                                action={
+                                                    <div
+                                                        // type="button"
+                                                        className="export-btn"
+                                                        style={exportCsvButtonStyle}
+                                                        title="Export CSV"
+                                                        aria-label="Export users to CSV"
+                                                        onClick={() =>
+                                                            downloadCsv(
+                                                                "quoteRequests.csv",
+                                                                rowsToCsv(
+                                                                    csvColumnDefs(quoteReqTableCol),
+                                                                    applyFilters(data?.quoteRequests ?? []) as unknown as Record<string, unknown>[]
+                                                                )
+                                                            )
+                                                        }
+                                                    >
+                                                        <Download size={18} strokeWidth={2} aria-hidden />
+                                                    </div>
+                                                }
+                                        />
+                                        <div
+                                            style={{
+                                                width: "100%"
+
+                                            }}
+                                        >
+                                            <DataTable
+                                                dense
+                                                columns={quoteReqTableCol}
+                                                rows={filteredQuoteTableRows}
+                                                pageSize={10}
+                                                getRowStyle={(row: any) =>
+                                                    row.indicative === "Executable" &&
+                                                    row.executable === "Yes" &&
+                                                    (!row.wssDealNumber ||
+                                                        row.wssDealNumber.toString().trim() === "")
+                                                        ? {
+                                                            backgroundColor: "#ffe5e5",
+                                                            BorderLeft: "4px solid red",
+                                                        }
+                                                        :{}
+                                                }
+                                            />
+                                        </div>
+                                    </Box>
+                                )}
+                            </div>
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gap: "2px"
+
+                                }}>
+
+                                {selectedView === "tradeBlotter" && (
+                                    <Box sx={outerBoxStyle}>
+                                        <Banner title="Booked Trade Blotter"
+                                                information= "Displays all successfully booked trades across all digital channels."
+                                                action={
+                                                    <button
+                                                        type="button"
+                                                        className="export-btn"
+                                                        style={exportCsvButtonStyle}
+                                                        title="Export CSV"
+                                                        aria-label="Export users to CSV"
+                                                        onClick={() =>
+                                                            downloadCsv(
+                                                                "bookTrades.csv",
+                                                                rowsToCsv(
+                                                                    csvColumnDefs(bookedTradeBlotterCol),
+                                                                    applyFilters(data?.bookTrades ?? []) as unknown as Record<string, unknown>[]
+                                                                )
+                                                            )
+                                                        }
+                                                    >
+                                                        <Download size={18} strokeWidth={2} aria-hidden />
+                                                    </button>
+                                                }
+                                        />
+                                        <div
+                                            style={{
+                                                width: "100%"
 
                         }}>
                        <DataTable
@@ -1248,7 +1518,59 @@ const itemStyle = {
                                     </div>
                 </Box>
                 )}
-                </div>
+                {selectedView === "derivativesCalendar" && (
+                    <DerivativesCalendar/>
+                )}
+
+                {selectedView === "derivativesBlotter" && (
+                    <Box sx={outerBoxStyle}>
+                        <Banner
+                        title="Derivative Blotter"
+                        information= "Displays full trade detials for all FX derivatives products."
+                        action={
+                            <button
+                            type="button"
+                            className="export-btn"
+                            style={exportCsvButtonStyle}
+                            title="Export CSV"
+                            aria-label="Export derivative trades to csv"
+                            onClick={() =>
+                                downloadCsv(
+                                    "derivatives.csv",
+                                    rowsToCsv(
+                                        csvColumnDefs(derivativesBlotterCol),
+                                        applyBlottersFilters(derivativeBlotter as unknown as Record<string, unknown>[]
+                                    ))
+                                )
+                            }
+                        >
+                            <Download
+                            size={18}
+                            strokeWidth={2}
+                            aria-hidden
+                            />
+                    </button>
+                        }
+                        />
+                            <div
+                            style={{
+                                width: "100%",
+                                overflow: "auto",
+
+                            }}
+                            >
+                                <DataTable
+                                dense
+                                columns={derivativesBlotterCol}
+                                rows={applyBlottersFilters(derivativeBlotter as unknown as Record<string, unknown>[]
+ )}
+                                pageSize={10}
+                                />
+                            </div> 
+                    </Box>
+
+                )}
+        </div>
 
         <div
           style={{
@@ -1436,6 +1758,7 @@ const itemStyle = {
                 </Box>             
             </div> 
             </div>
+            
             </>
         )}
         
