@@ -1,1 +1,105 @@
 
+{
+    "static_data": {
+        "sales_team": [
+            {
+                "team_name": "FX Sales 1",
+                "team_codes": [
+                    "11N",
+                    "11P",
+                    "18A",
+                    "18B",
+                    "18D",
+                    "18F",
+                    "18G",
+                    "18H",
+                    "18L",
+                    "18M",
+                    "18N",
+                    "18P",
+                    "18Q",
+                    "20K",
+                    "20P",
+                    "34A",
+                    "34B",
+                    "34C",
+                    "34D",
+                    "35A",
+                    "35B"
+                ]
+            },
+            {
+                "team_name": "FX Sales 2",
+                "team_codes": [
+                    "45C",
+                    "45D",
+                    "45E",
+                    "45F",
+                    "45G",
+                    "45H",
+                    "45J",
+                    "45K",
+                    "45L",
+                    "45M",
+                    "45N",
+                    "45P",
+                    "45Q",
+                    "45R",
+                    "45T",
+                    "45U",
+                    "45V",
+                    "45W",
+                    "45X"
+                ]
+            },
+            {
+                "team_name": "FX Sales 3",
+                "team_codes": [
+                    "36U",
+                    "36V",
+                    "38A",
+                    "39D",
+                    "39E",
+                    "39F",
+                    "39H",
+                    "39K",
+                    "39L",
+                    "39M",
+                    "39N",
+                    "41C",
+                    "41D",
+                    "42J",
+                    "42K",
+                    "42M"
+                ]
+            }
+        ],
+        "channel": [
+            "GW",
+            "GWT",
+            "TAG"
+        ],
+        "currency_pair": [
+            "AUDUSD",
+            "EURUSD",
+            "GBPUSD"
+        ],
+        "error_code": [
+            "2001 - Market Closed",
+            "2102 - No Rate",
+            "2103 - No Rate",
+            "2003 - Maintenance Trading Session",
+            "3000 - Customer does not exist",
+            "3001 - Account does not exist",
+            "3100 - Trade Reject",
+            "3003 -  No Active Quote",
+            "4000 -  Cannot connect to FXDB",
+            "4001 -  Customer does not exist in FXDB",
+            "4002 -  Customer is not set up in WSS",
+            "4003 -  PFE line does not exist",
+            "4004 -  CIF is flagged as not Compliant or non-dealing",
+            "4005 -  Account is not set up in FX DB or WSS",
+            "4006 -  Account is failed auto-onboarding to WSS"
+        ]
+    }
+}
