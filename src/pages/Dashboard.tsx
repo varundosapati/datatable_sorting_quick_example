@@ -3,6 +3,7 @@ import DataTable, { Column } from "../components/DataTableNew";
 import { fetchDashboard, type DashboardFilters } from "../api/client";
 import { bookingRequestErrors, ERROR_CODES, quoteReqByPairChannel, revenueByChannel, TEAM_CODES, TEAM_PRESET_GROUPS, CHANNEL, CURRENCYPAIR } from "../mock/data";
 import { useAutoRefresh } from "../hooks/useAutoRefresh";
+import { useDashboardData } from "../hooks/useDashboardData";
 import { quoteRequestErrors } from "../mock/data";
 import { DivideSquare, MoveRight } from "lucide-react";
 import Banner from "../components/Banner";
@@ -359,55 +360,7 @@ const handleRowClick = (row: any) => {
     
 };
 
-const [allRecord, setAllRecord] = 
-useState<DashboardRecord[]>([]);
-
-const [dataloading, setDataLoading] = useState(true);
-
-const [dataError, setDataError] = 
-useState<string | null>(null);
-
-useEffect(() => {
-    let active =  true;
-
-    const loadJsonData = async () => {
-        try {
-            const response = await fetch(
-                "mock/filterResponse.json"
-            );
-
-            if(!response.ok) {
-                throw new Error(
-                    `Failed to load JSON: ${response.status}`
-                );
-            }
-
-            const result: { trades: DashboardRecord[] } =
-            await response.json();
-
-            if (active) {
-                setAllRecord(result.trades);
-                setDataError(null);
-            }
-        } catch (error) {
-            console.error("JSON loading error:", error);
-
-            if(active) {
-                setDataError("Unable to load Dashboard Json");
-            }
-        } finally {
-            if(active) {
-                setDataLoading(false);
-            }
-        }
-        };
-        loadJsonData();
-
-        return () => {
-            active = false;
-        };
-    
-}, []);
+const { allRecord, dataloading, dataError } = useDashboardData();
 
 
 const filteredRecords = filterDashboardData(

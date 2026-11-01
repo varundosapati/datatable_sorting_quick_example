@@ -1,4 +1,5 @@
 import FiltersBar from "../components/FiltersBar";
+import type { DashboardRecord } from "../utils/filterDashboardData";
 import {
     quoteReqByPairChannel,
     quoteRequestErrors,
@@ -9,6 +10,24 @@ import {
     errorCodeTradeDetails,
     revenueByChannel
 } from "../mock/data";
+
+/**
+ * Fetches the raw dashboard trade records.
+ *
+ * Today this reads a static JSON file served from /public/mock. When the
+ * backend is ready, swap the fetch URL (and any auth/headers) here only —
+ * the calling hook and components stay unchanged.
+ */
+export async function fetchTradeRecords(): Promise<DashboardRecord[]> {
+    const response = await fetch("mock/filterResponse.json");
+
+    if (!response.ok) {
+        throw new Error(`Failed to load trade records: ${response.status}`);
+    }
+
+    const result: { trades: DashboardRecord[] } = await response.json();
+    return result.trades;
+}
 
 export type DashboardFilters = {
     teamcodes: string[];
