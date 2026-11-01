@@ -211,6 +211,86 @@ function formatCurrency(revenue: any) {
         }).format(revenue);
 }
 
+// --- Stubs for not-yet-implemented views (kept so the view registry compiles) ---
+const derivativeBlotter: any[] = [];
+function DerivativesCalendar() {
+    return null;
+}
+
+// --- Reusable table section: Banner + CSV export button + DataTable ---
+type TableSectionProps = {
+    title: string;
+    information: string;
+    csvFilename: string;
+    columns: any[];
+    rows: any[];
+    csvRows: any[];
+    pageSize?: number;
+    dense?: boolean;
+    onRowClick?: (row: any) => void;
+    getRowStyle?: (row: any) => CSSProperties;
+    wrapStyle?: CSSProperties;
+    actionAsDiv?: boolean;
+};
+
+function TableSection({
+    title,
+    information,
+    csvFilename,
+    columns,
+    rows,
+    csvRows,
+    pageSize = 10,
+    dense = true,
+    onRowClick,
+    getRowStyle,
+    wrapStyle,
+    actionAsDiv = false,
+}: TableSectionProps) {
+    const exportProps = {
+        className: "export-btn",
+        style: exportCsvButtonStyle,
+        title: "Export CSV",
+        "aria-label": "Export users to CSV",
+        onClick: () =>
+            downloadCsv(
+                csvFilename,
+                rowsToCsv(
+                    csvColumnDefs(columns),
+                    csvRows as unknown as Record<string, unknown>[]
+                )
+            ),
+    };
+
+    const action = actionAsDiv ? (
+        <div {...exportProps}>
+            <Download size={18} strokeWidth={2} aria-hidden />
+        </div>
+    ) : (
+        <button type="button" {...exportProps}>
+            <Download size={18} strokeWidth={2} aria-hidden />
+        </button>
+    );
+
+    const table = (
+        <DataTable
+            dense={dense}
+            columns={columns}
+            rows={rows}
+            pageSize={pageSize}
+            onRowClick={onRowClick}
+            getRowStyle={getRowStyle}
+        />
+    );
+
+    return (
+        <Box sx={outerBoxStyle}>
+            <Banner title={title} information={information} action={action} />
+            {wrapStyle ? <div style={wrapStyle}>{table}</div> : table}
+        </Box>
+    );
+}
+
 type StaticFilterData = {
     static_data: {
         sales_team: {
@@ -688,7 +768,100 @@ const itemStyle = {
         ];
     }, [data]);
 
-   
+    // --- Config-driven view registry ---
+    // Each entry describes a single-table view. The "quoteErrors" view renders
+    // two tables and "derivativesCalendar" renders a custom component, so both
+    // are handled as special cases in the render switch below.
+    const singleTableConfigs: Record<string, TableSectionProps> = {
+        currencyPair: {
+            title: "Quote Request By Currency Pair and Channel",
+            information: "Displays quote request details and volume by currency pair and channel across all digital platforms.",
+            csvFilename: "quoteReqByPairChannel.csv",
+            columns: quoteReqbyCurrncyPairCol,
+            rows: data?.quoteReqByPairChannel ?? [],
+            csvRows: applyFilters(data?.quoteReqByPairChannel ?? []),
+            onRowClick: handleRowClick,
+        },
+        quotetable: {
+            title: "Quote Request",
+            information: "Displays all indicative and executable quote requests, including whether each resulted in a successfully booked trade.",
+            csvFilename: "quoteRequests.csv",
+            columns: quoteReqTableCol,
+            rows: filteredQuoteTableRows,
+            csvRows: applyFilters(data?.quoteRequests ?? []),
+            actionAsDiv: true,
+            wrapStyle: { width: "100%" },
+            getRowStyle: (row: any) =>
+                row.indicative === "Executable" &&
+                row.executable === "Yes" &&
+                (!row.wssDealNumber || row.wssDealNumber.toString().trim() === "")
+                    ? { backgroundColor: "#ffe5e5", BorderLeft: "4px solid red" }
+                    : {},
+        },
+        tradeBlotter: {
+            title: "Booked Trade Blotter",
+            information: "Displays all successfully booked trades across all digital channels.",
+            csvFilename: "bookTrades.csv",
+            columns: bookedTradeBlotterCol,
+            rows: applyBlottersFilters(data?.bookTrades ?? []),
+            csvRows: applyFilters(data?.bookTrades ?? []),
+            wrapStyle: { width: "100%" },
+        },
+        derivativesBlotter: {
+            title: "Derivative Blotter",
+            information: "Displays full trade detials for all FX derivatives products.",
+            csvFilename: "derivatives.csv",
+            columns: derivativesBlotterCol,
+            rows: applyBlottersFilters(derivativeBlotter),
+            csvRows: applyBlottersFilters(derivativeBlotter),
+            wrapStyle: { width: "100%", overflow: "auto" },
+        },
+        svbUpload: {
+            title: "SVB Go File Upload",
+            information: "Displays all trades successfully booked through the SVB Go file upload feature.",
+            csvFilename: "fileUploads.csv",
+            columns: svbGoFileUploadCol,
+            rows: applyBlottersFilters(data?.fileUploads ?? []),
+            csvRows: applyFilters(data?.fileUploads ?? []),
+            wrapStyle: { width: "100%" },
+        },
+        errordetails: {
+            title: "Error Code Trade Details",
+            information: "Displays detailed records of all quote and booking errors across channels, including associated error codes.",
+            csvFilename: "errorCodeTradeDetails.csv",
+            columns: errorCodeTradeDetailsCol,
+            rows: applyFilters(data?.errorCodeTradeDetails ?? []),
+            csvRows: applyFilters(data?.errorCodeTradeDetails ?? []),
+            wrapStyle: { width: "100%" },
+        },
+        revenue: {
+            title: "Revenue By Channel",
+            information: "Displays total revenue generated across each digital channel.",
+            csvFilename: "revenueByChannel.csv",
+            columns: revbyChannelCol,
+            rows: applyFilters(data?.revenueByChannel ?? []),
+            csvRows: applyFilters(data?.revenueByChannel ?? []),
+        },
+    };
+
+    const quoteErrorsConfigs: TableSectionProps[] = [
+        {
+            title: "Quote Request Errors By Error Code and Channel",
+            information: "Displays all quote requests that resulted in an error, broken down by error code and channel.",
+            csvFilename: "quoteRequestErrors.csv",
+            columns: quoteReqbyErrCodeCol,
+            rows: filteredQuoteRows,
+            csvRows: applyFilters(data?.quoteRequestErrors ?? []),
+        },
+        {
+            title: "Booking Request Errors By Error Code and Channel",
+            information: "Displays trades that received a quote but failed to book into WallStreet Systems (WSS), categorized by error code and channel.",
+            csvFilename: "bookingRequestErrors.csv",
+            columns: bookingReqbyErrCodeCol,
+            rows: filteredBookRows,
+            csvRows: applyFilters(data?.bookingRequestErrors ?? []),
+        },
+    ];
 
  return (
             <>
@@ -1296,411 +1469,29 @@ const itemStyle = {
 
 
                             {selectedView === "quoteErrors" && (
-
                                 <div
                                     style={{
                                         display: "grid",
                                         gridTemplateColumns: "repeat(2, 1fr)",
                                         gap: "2px",
                                         padding: "10px"
-
                                     }}
                                 >
-                                    <Box sx={outerBoxStyle}>
-                                        <Banner title="Quote Request Errors By Error Code and Channel"
-                                                information= "Displays all quote requests that resulted in an error, broken down by error code and channel."
-                                                action={
-                                                    <button
-                                                        type="button"
-                                                        className="export-btn"
-                                                        style={exportCsvButtonStyle}
-                                                        title="Export CSV"
-                                                        aria-label="Export users to CSV"
-                                                        onClick={() =>
-                                                            downloadCsv(
-                                                                "quoteRequestErrors.csv",
-                                                                rowsToCsv(
-                                                                    csvColumnDefs(quoteReqbyErrCodeCol),
-                                                                    applyFilters(data?.quoteRequestErrors ?? []) as unknown as Record<string, unknown>[]
-                                                                )
-                                                            )
-                                                        }
-                                                    >
-                                                        <Download size={18} strokeWidth={2} aria-hidden />
-                                                    </button>
-                                                }
-                                        />
-
-                                        <DataTable
-                                            dense
-                                            columns={quoteReqbyErrCodeCol}
-                                            rows={filteredQuoteRows}
-                                            pageSize={10}
-                                        />
-                                    </Box>
-
-                                    <Box sx={outerBoxStyle}>
-                                        <Banner title="Booking Request Errors By Error Code and Channel"
-                                                information= "Displays trades that received a quote but failed to book into WallStreet Systems (WSS), categorized by error code and channel."
-                                                action={
-                                                    <button
-                                                        type="button"
-                                                        className="export-btn"
-                                                        style={exportCsvButtonStyle}
-                                                        title="Export CSV"
-                                                        aria-label="Export users to CSV"
-                                                        onClick={() =>
-                                                            downloadCsv(
-                                                                "bookingRequestErrors.csv",
-                                                                rowsToCsv(
-                                                                    csvColumnDefs(bookingReqbyErrCodeCol),
-                                                                    applyFilters(data?.bookingRequestErrors ?? []) as unknown as Record<string, unknown>[]
-                                                                )
-                                                            )
-                                                        }
-                                                    >
-                                                        <Download size={18} strokeWidth={2} aria-hidden />
-                                                    </button>
-                                                }
-                                        />
-                                        <DataTable
-                                            dense
-                                            columns={bookingReqbyErrCodeCol}
-                                            rows={filteredBookRows}
-                                            pageSize={10}
-                                        />
-                                    </Box>
+                                    {quoteErrorsConfigs.map((cfg) => (
+                                        <TableSection key={cfg.csvFilename} {...cfg} />
+                                    ))}
                                 </div>
-
                             )}
 
-
-
-
-                            {selectedView === "currencyPair" && (
-                                <Box sx={outerBoxStyle}>
-                                    <Banner title="Quote Request By Currency Pair and Channel"
-                                            information= "Displays quote request details and volume by currency pair and channel across all digital platforms."
-                                            action={
-                                                <button
-                                                    type="button"
-                                                    className="export-btn"
-                                                    style={exportCsvButtonStyle}
-                                                    title="Export CSV"
-                                                    aria-label="Export users to CSV"
-                                                    onClick={() =>
-                                                        downloadCsv(
-                                                            "quoteReqByPairChannel.csv",
-                                                            rowsToCsv(
-                                                                csvColumnDefs(quoteReqbyCurrncyPairCol),
-                                                                applyFilters(data?.quoteReqByPairChannel ?? []) as unknown as Record<string, unknown>[]
-                                                            )
-                                                        )
-                                                    }
-                                                >
-                                                    <Download size={18} strokeWidth={2} aria-hidden />
-                                                </button>
-                                            }
-
-                                    />
-                                    <DataTable
-                                        dense
-                                        columns={quoteReqbyCurrncyPairCol}
-                                        rows={data?.quoteReqByPairChannel ?? []}
-                                        pageSize={10}
-                                        onRowClick={handleRowClick}
-                                    />
-                                </Box>
+                            {selectedView === "derivativesCalendar" && (
+                                <DerivativesCalendar />
                             )}
-                            <div
-                                style={{
-                                    display: "grid",
-                                    gap: "2px"
 
-
-                                }}>
-
-                                {selectedView === "quotetable" && (
-                                    <Box sx={outerBoxStyle}>
-                                        <Banner title="Quote Request"
-                                                information= "Displays all indicative and executable quote requests, including whether each resulted in a successfully booked trade."
-                                                action={
-                                                    <div
-                                                        // type="button"
-                                                        className="export-btn"
-                                                        style={exportCsvButtonStyle}
-                                                        title="Export CSV"
-                                                        aria-label="Export users to CSV"
-                                                        onClick={() =>
-                                                            downloadCsv(
-                                                                "quoteRequests.csv",
-                                                                rowsToCsv(
-                                                                    csvColumnDefs(quoteReqTableCol),
-                                                                    applyFilters(data?.quoteRequests ?? []) as unknown as Record<string, unknown>[]
-                                                                )
-                                                            )
-                                                        }
-                                                    >
-                                                        <Download size={18} strokeWidth={2} aria-hidden />
-                                                    </div>
-                                                }
-                                        />
-                                        <div
-                                            style={{
-                                                width: "100%"
-
-                                            }}
-                                        >
-                                            <DataTable
-                                                dense
-                                                columns={quoteReqTableCol}
-                                                rows={filteredQuoteTableRows}
-                                                pageSize={10}
-                                                getRowStyle={(row: any) =>
-                                                    row.indicative === "Executable" &&
-                                                    row.executable === "Yes" &&
-                                                    (!row.wssDealNumber ||
-                                                        row.wssDealNumber.toString().trim() === "")
-                                                        ? {
-                                                            backgroundColor: "#ffe5e5",
-                                                            BorderLeft: "4px solid red",
-                                                        }
-                                                        :{}
-                                                }
-                                            />
-                                        </div>
-                                    </Box>
-                                )}
-                            </div>
-                            <div
-                                style={{
-                                    display: "grid",
-                                    gap: "2px"
-
-                                }}>
-
-                                {selectedView === "tradeBlotter" && (
-                                    <Box sx={outerBoxStyle}>
-                                        <Banner title="Booked Trade Blotter"
-                                                information= "Displays all successfully booked trades across all digital channels."
-                                                action={
-                                                    <button
-                                                        type="button"
-                                                        className="export-btn"
-                                                        style={exportCsvButtonStyle}
-                                                        title="Export CSV"
-                                                        aria-label="Export users to CSV"
-                                                        onClick={() =>
-                                                            downloadCsv(
-                                                                "bookTrades.csv",
-                                                                rowsToCsv(
-                                                                    csvColumnDefs(bookedTradeBlotterCol),
-                                                                    applyFilters(data?.bookTrades ?? []) as unknown as Record<string, unknown>[]
-                                                                )
-                                                            )
-                                                        }
-                                                    >
-                                                        <Download size={18} strokeWidth={2} aria-hidden />
-                                                    </button>
-                                                }
-                                        />
-                                        <div
-                                            style={{
-                                                width: "100%"
-
-                        }}>
-                       <DataTable
-                                    dense
-                                    columns={bookedTradeBlotterCol}
-                rows={applyBlottersFilters(data?.bookTrades ?? [])}
-                                    pageSize={10}
-                                    />
-                                    </div>
-                </Box>
-                )}
-                {selectedView === "derivativesCalendar" && (
-                    <DerivativesCalendar/>
-                )}
-
-                {selectedView === "derivativesBlotter" && (
-                    <Box sx={outerBoxStyle}>
-                        <Banner
-                        title="Derivative Blotter"
-                        information= "Displays full trade detials for all FX derivatives products."
-                        action={
-                            <button
-                            type="button"
-                            className="export-btn"
-                            style={exportCsvButtonStyle}
-                            title="Export CSV"
-                            aria-label="Export derivative trades to csv"
-                            onClick={() =>
-                                downloadCsv(
-                                    "derivatives.csv",
-                                    rowsToCsv(
-                                        csvColumnDefs(derivativesBlotterCol),
-                                        applyBlottersFilters(derivativeBlotter as unknown as Record<string, unknown>[]
-                                    ))
-                                )
-                            }
-                        >
-                            <Download
-                            size={18}
-                            strokeWidth={2}
-                            aria-hidden
-                            />
-                    </button>
-                        }
-                        />
-                            <div
-                            style={{
-                                width: "100%",
-                                overflow: "auto",
-
-                            }}
-                            >
-                                <DataTable
-                                dense
-                                columns={derivativesBlotterCol}
-                                rows={applyBlottersFilters(derivativeBlotter as unknown as Record<string, unknown>[]
- )}
-                                pageSize={10}
-                                />
-                            </div> 
-                    </Box>
-
-                )}
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gap: "2px"
-            
-          }}>
-
-                {selectedView === "svbUpload" && (
-                 <Box sx={outerBoxStyle}>
-                    <Banner title="SVB Go File Upload"  
-                    information= "Displays all trades successfully booked through the SVB Go file upload feature."
-                        action={
-           <button
-            type="button"
-            className="export-btn"
-            style={exportCsvButtonStyle}
-            title="Export CSV"
-            aria-label="Export users to CSV"
-            onClick={() =>
-              downloadCsv(
-                "fileUploads.csv",
-                rowsToCsv(
-                  csvColumnDefs(svbGoFileUploadCol),
-                  applyFilters(data?.fileUploads ?? []) as unknown as Record<string, unknown>[]
-                )
-              )
-            }
-          >
-            <Download size={18} strokeWidth={2} aria-hidden />
-          </button>
-                        }
-                        />   
-                        <div
-                        style={{
-                            width: "100%"
-
-                        }}>     
-                    <DataTable                
-                                    dense
-                                    columns={svbGoFileUploadCol}
-                                    rows={applyBlottersFilters(data?.fileUploads ?? [])}
-                                    pageSize={10}
-                                    />
-                                    </div>
-                </Box>
-                )}
-               </div>
-<div
-          style={{
-            display: "grid",
-            gap: "2px"
-            
-          }}>
-
-{selectedView === "errordetails" && (
-                    <Box sx={outerBoxStyle}>
-                    <Banner title="Error Code Trade Details"  
-                    information= "Displays detailed records of all quote and booking errors across channels, including associated error codes."
-                        action={
-           <button
-            type="button"
-            className="export-btn"
-            style={exportCsvButtonStyle}
-            title="Export CSV"
-            aria-label="Export users to CSV"
-            onClick={() =>
-              downloadCsv(
-                "errorCodeTradeDetails.csv",
-                rowsToCsv(
-                  csvColumnDefs(errorCodeTradeDetailsCol),
-                  applyFilters(data?.errorCodeTradeDetails ?? []) as unknown as Record<string, unknown>[]
-                )
-              )
-            }
-          >
-            <Download size={18} strokeWidth={2} aria-hidden />
-          </button>
-                        }
-                        />
-                        <div
-                        style={{
-                            width: "100%"
-
-                        }}>  
-                       <DataTable
-                                    dense
-                                    columns={errorCodeTradeDetailsCol}
-                                    rows={applyFilters(data?.errorCodeTradeDetails ?? [])}
-                                    pageSize={10}
-                                    />
-                                    </div>
-                </Box>
-                
-)}
-</div>
-                {selectedView === "revenue" && (
-                    <Box sx={outerBoxStyle}>
-                    <Banner title="Revenue By Channel"  
-                    information= "Displays total revenue generated across each digital channel."
-                        action={
-           <button
-            type="button"
-            className="export-btn"
-            style={exportCsvButtonStyle}
-            title="Export CSV"
-            aria-label="Export users to CSV"
-            onClick={() =>
-              downloadCsv(
-                "revenueByChannel.csv",
-                rowsToCsv(
-                  csvColumnDefs(revbyChannelCol),
-                  applyFilters(data?.revenueByChannel ?? []) as unknown as Record<string, unknown>[]
-                )
-              )
-            }
-          >
-            <Download size={18} strokeWidth={2} aria-hidden />
-          </button>
-                        }
-                        />
-                       <DataTable
-                                    dense
-                                    columns={revbyChannelCol}
-                                    rows={applyFilters(data?.revenueByChannel ?? [])}
-                                    pageSize={10}
-                                    />
-                                    
-                </Box>
-                )}
+                            {singleTableConfigs[selectedView] && (
+                                <div style={{ display: "grid", gap: "2px" }}>
+                                    <TableSection {...singleTableConfigs[selectedView]} />
+                                </div>
+                            )}
 
                 {popoupOpen && (
                     <div className="modal-overlay">
