@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF  from "jspdf";
+import { font } from "../styles/typography";
 
 const menuItemStyle: React.CSSProperties = {
     padding: "10px 12px",
     color: "#070707",
     cursor: "pointer",
-    fontSize: "14px"
+    fontSize: font.size.sm,
 };
 
 const ExportMenu: React.FC = () => {

@@ -1,5 +1,6 @@
 import {ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { font } from "../styles/typography";
  export type Column<T> = {
     key: string;
     header: string;
@@ -87,7 +88,7 @@ import React, { useEffect, useState } from "react";
           minWidth: "100%",
           borderCollapse: "separate",
           borderSpacing: 0,
-          fontSize: dense ? 13 : 14,
+          fontSize: dense ? font.size.xs : font.size.sm,
           paddingLeft: "2px",
           paddingRight: "2px",
           paddingTop: "1px",
@@ -106,11 +107,11 @@ import React, { useEffect, useState } from "react";
                   color: "#ffffff",
                   backgroundColor: "#8d9ec7",
                   borderBottom: "1px solid #e5e7eb",
-                  fontWeight: 600,
+                  fontWeight: font.weight.semibold,
                   whiteSpace: "nowrap",
                   width: c.width,
                   textTransform: "uppercase",
-                  fontSize: dense ? 11 : 12,
+                  fontSize: dense ? "0.6875rem" : font.size.xs,
                   letterSpacing: "0.05em",
                   cursor: "pointer",
                   userSelect: "none",
@@ -231,7 +232,7 @@ import React, { useEffect, useState } from "react";
             padding: "12px 16px",
             borderTop: "1px solid #e5e7eb",
             background: "#ffffff",
-            fontSize: 14,
+            fontSize: font.size.sm,
             color: "#4b5563",
           }}
         >
@@ -254,7 +255,7 @@ import React, { useEffect, useState } from "react";
             >
               <ChevronLeft size={18} />
             </button>
-            <span style={{ padding: "0 12px", fontWeight: 500 }}>
+            <span style={{ padding: "0 12px", fontWeight: font.weight.medium }}>
               Page {pageIndex} of {totalPages}
             </span>
             <button

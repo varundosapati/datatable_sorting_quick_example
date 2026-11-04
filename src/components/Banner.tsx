@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {  Typography, IconButton, Collapse, Box } from '@mui/material';
 import { Padding } from '@mui/icons-material';
 import { Info } from 'lucide-react';
+import { font } from "../styles/typography";
 
 export type BannerProps = {
   /** Main heading shown in the banner */
@@ -19,7 +20,7 @@ export default function Banner({ title, information, action}:BannerProps) {
         px: 0.5,
         py: 0.1,
         // ml: 1,
-        fontWeight: 'bold',
+        fontWeight: font.weight.bold,
     };
 
 const [infoOpen, setInfoOpen] = useState(false);
@@ -98,7 +99,7 @@ const [infoOpen, setInfoOpen] = useState(false);
             px: 1.5,
             py: 1,
             borderTop: "1px solid rgba(255,255,255,0.28)",
-            fontSize: "14px",
+            fontSize: font.size.sm,
           }}
         >
           {information}

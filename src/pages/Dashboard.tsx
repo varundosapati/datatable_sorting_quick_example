@@ -16,6 +16,7 @@ import ExportMenu from "../components/ExportMenu";
 import { downloadCsv, rowsToCsv } from "../utils/csvExport";
 import { Download } from "lucide-react";
 import responseData from "../../public/mock/filterResponse.json";
+import { font } from "../styles/typography";
 
 import {
     filterDashboardData,
@@ -39,7 +40,7 @@ const outerBoxStyle = {
 
 const exportCsvButtonStyle: CSSProperties = {
     display:"inline-flex",
-    fontSize: "0.85rem",
+    fontSize: font.size.xs,
     borderRadius: "6px",
     border: "1px solid #d1d5db",
     background: "#ffffff",
@@ -842,7 +843,7 @@ const itemStyle = {
                                 flexWrap:"wrap",
                                 gap: "1rem",
                                 padding:"8px 16px",
-                                fontSize:"1.05rem",
+                                fontSize: font.size.lg,
                             }}>
                             <div className="brand">
                                 <Typography variant="h6" component="div" sx={{ variant: "h1", flexGrow: 1, paddingLeft: 1, fontWeight: 'bold', color: 'gray', paddingTop: 2 }}>
@@ -856,7 +857,7 @@ const itemStyle = {
                                     <button className="btn" onClick={load} type="button">
                                         Manual Refresh
                                     </button>
-                                    <div style={{ margin: 10, color: "black", fontSize: 12, textAlign: "left"}} >
+                                    <div style={{ margin: 10, color: "black", fontSize: font.size.xs, textAlign: "left"}} >
                                         Manual refresh +auto refresh every 30 minutes (toggle above).
                                     </div>
                                 </div>
@@ -882,10 +883,10 @@ const itemStyle = {
                                         }}
                                         key={k.label}
                                     >
-                                        <div style={{ color: "#ffffff", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                                        <div style={{ color: "#ffffff", fontSize: font.size.xs, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                                             {k.label}
                                         </div>
-                                        <div style={{ color: "#ffffff", fontSize: 22, fontWeight: 700, marginTop: 4 }}>
+                                        <div style={{ color: "#ffffff", fontSize: font.size["2xl"], fontWeight: font.weight.bold, marginTop: 4 }}>
                                             {k.value}
                                         </div>
                                     </div>
@@ -901,7 +902,7 @@ const itemStyle = {
                                     border: "1px solid #d1d5db",
                                     background: "#f3f4f6",
                                     color: "#111827",
-                                    fontSize: "0.85rem",
+                                    fontSize: font.size.sm,
                                     cursor: "pointer",
                                 }}
                             >
@@ -949,7 +950,7 @@ const itemStyle = {
                                                 flexDirection: "column",
                                                 alignItems: "stretch",
                                                 gap: "4px",
-                                                fontSize: "0.875rem",
+                                                fontSize: font.size.sm,
                                                 color: "#374151",
                                                 minWidth: 0,
                                                 width: "100%",
@@ -1010,7 +1011,7 @@ const itemStyle = {
                                                 flexDirection: "column",
                                                 alignItems: "stretch",
                                                 gap: "4px",
-                                                fontSize: "0.875rem",
+                                                fontSize: font.size.sm,
                                                 color: "#374151",
                                                 minWidth: 0,
                                                 width: "100%",
@@ -1059,7 +1060,7 @@ const itemStyle = {
                                                 flexDirection: "column",
                                                 alignItems: "stretch",
                                                 gap: "4px",
-                                                fontSize: "0.875rem",
+                                                fontSize: font.size.sm,
                                                 color: "#374151",
                                                 minWidth: 0,
                                                 width: "100%",
@@ -1086,7 +1087,7 @@ const itemStyle = {
                                                     {draftFilters.timeframe === "custom" ? "Date Range" : draftFilters.timeframe?.replaceAll("_"," ") || "Select"}
                                                 </div>
 
-                                                <span style={{ position: "absolute", right: "10px", top: "20%", transform: "translate(-50%)", pointerEvents: "none", fontSize: "12px"}}>▼</span>
+                                                <span style={{ position: "absolute", right: "10px", top: "20%", transform: "translate(-50%)", pointerEvents: "none", fontSize: font.size.xs}}>▼</span>
                                                 {openDropdown && (
                                                     <div
                                                         style={{
@@ -1105,7 +1106,7 @@ const itemStyle = {
 
                                                         }}
                                                     >
-                                                        <div style={{padding: "8px", fontWeight: "bold", background: "#f3f4f6" }}>Relative</div>
+                                                        <div style={{padding: "8px", fontWeight: font.weight.semibold, background: "#f3f4f6" }}>Relative</div>
                                                         {[
                                                             { value: "today", label: "Today"},
                                                             { value: "week_to_date", label: "Week To Date" },
@@ -1124,7 +1125,7 @@ const itemStyle = {
                                                             </div>
                                                         ))}
 
-                                                        <div style={{padding: "8px", fontWeight: "bold", background: "#f3f4f6" }}>Last X</div>
+                                                        <div style={{padding: "8px", fontWeight: font.weight.semibold, background: "#f3f4f6" }}>Last X</div>
                                                         {[
                                                             { value: "last_15_mins", label: "Last 15 mins"},
                                                             { value: "last_60_mins", label: "Last 60 mins" },
@@ -1146,7 +1147,7 @@ const itemStyle = {
                                                             onClick={() => setOpenDateRange(!openDateRange)}
                                                             style={{
                                                                 ...itemStyle,
-                                                                fontWeight: "bold",
+                                                                fontWeight: font.weight.semibold,
                                                                 background: "#f3f4f6"
                                                             }}
                                                         >
@@ -1250,7 +1251,7 @@ const itemStyle = {
                                                 flexDirection: "column",
                                                 alignItems: "stretch",
                                                 gap: "4px",
-                                                fontSize: "0.875rem",
+                                                fontSize: font.size.sm,
                                                 color: "#374151",
                                                 minWidth: 0,
                                                 width: "100%",
@@ -1309,7 +1310,7 @@ const itemStyle = {
                                                 flexDirection: "column",
                                                 alignItems: "stretch",
                                                 gap: "4px",
-                                                fontSize: "0.875rem",
+                                                fontSize: font.size.sm,
                                                 color: "#374151",
                                                 minWidth: 0,
                                                 width: "100%",
@@ -1326,7 +1327,7 @@ const itemStyle = {
                                                    style={{
                                                        height: "50px",
                                                        padding: "0 14px",
-                                                       fontSize: "14px",
+                                                       fontSize: font.size.sm,
                                                        borderRadius: "8px",
                                                        border: "1px solid #ccc",
                                                        width: "100%",
@@ -1342,7 +1343,7 @@ const itemStyle = {
                                                 flexDirection: "column",
                                                 alignItems: "stretch",
                                                 gap: "4px",
-                                                fontSize: "0.875rem",
+                                                fontSize: font.size.sm,
                                                 color: "#374151",
                                                 minWidth: 0,
                                                 width: "100%",
@@ -1359,7 +1360,7 @@ const itemStyle = {
                                                    style={{
                                                        height: "50px",
                                                        padding: "0 14px",
-                                                       fontSize: "14px",
+                                                       fontSize: font.size.sm,
                                                        borderRadius: "8px",
                                                        border: "1px solid #ccc",
                                                        width: "100%",
@@ -1374,7 +1375,7 @@ const itemStyle = {
                                                 flexDirection: "column",
                                                 alignItems: "stretch",
                                                 gap: "4px",
-                                                fontSize: "0.875rem",
+                                                fontSize: font.size.sm,
                                                 color: "#374151",
                                                 minWidth: 0,
                                                 width: "100%",
@@ -1389,7 +1390,7 @@ const itemStyle = {
                                                    style={{
                                                        height: "50px",
                                                        padding: "0 14px",
-                                                       fontSize: "14px",
+                                                       fontSize: font.size.sm,
                                                        borderRadius: "8px",
                                                        border: "1px solid #ccc",
                                                        width: "100%",
@@ -1437,7 +1438,7 @@ const itemStyle = {
                                                     border: "1px solid #d1d5db",
                                                     background: "#f3f4f6",
                                                     color: "#374151",
-                                                    fontSize: "0.875rem",
+                                                    fontSize: font.size.sm,
                                                     cursor: "pointer",
                                                 }}
                                             >
@@ -1452,9 +1453,9 @@ const itemStyle = {
                                                     border: "none",
                                                     background: "#1d4ed8",
                                                     color: "#ffffff",
-                                                    fontSize: "0.875rem",
+                                                    fontSize: font.size.sm,
                                                     cursor: "pointer",
-                                                    fontWeight: 600,
+                                                    fontWeight: font.weight.semibold,
                                                 }}
                                             >
                                                 Apply Filters

@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from "react";
+import { font } from "../styles/typography";
 
 export default function MultiSelect({
     label,
@@ -28,7 +29,7 @@ export default function MultiSelect({
 
     return (
         <div style={{position: "relative" }}>
-            <div style={{ color: "black", fontSize: 12, marginBottom: 6}}>
+            <div style={{ color: "black", fontSize: font.size.xs, marginBottom: 6}}>
                 {label}
                 </div>
 
@@ -37,7 +38,7 @@ export default function MultiSelect({
                 style={{
             height: "52px",
             padding: "0 12px",
-            fontSize: "14px",
+            fontSize: font.size.sm,
             borderRadius: "6px",
             border: "1px solid white",
             minWidth: "180px",

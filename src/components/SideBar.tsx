@@ -3,6 +3,7 @@ import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
+import { font } from "../styles/typography";
 import Collapse from '@mui/material/Collapse';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -68,7 +69,7 @@ export default function Sidebar({selectedView, setSelectedView}: SidebarProps) {
                     <ListItemButton onClick={() => setOpenQuote(!openQuote)}>
                         <ListItemText
                         primary="Quote Execution"
-                        primaryTypographyProps={{fontWeight: 600}}
+                        primaryTypographyProps={{fontWeight: font.weight.semibold}}
                         />
                         {openQuote ? <ExpandLess /> : <ExpandMore />}
                         </ListItemButton>

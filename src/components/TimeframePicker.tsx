@@ -1,3 +1,5 @@
+import { font } from "../styles/typography";
+
 const PRESETS: { group: string; items: {key: string; label: string }[] }[] = [
     {
         group: "Relative",
@@ -39,7 +41,7 @@ export default function TimeFramePicker({
         style={{
             height: "52px",
             padding: "0 12px",
-            fontSize: "14px",
+            fontSize: font.size.sm,
             borderRadius: "6px",
             border: "1px solid #ccc",
             minWidth: "180px",
