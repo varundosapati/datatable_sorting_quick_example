@@ -306,7 +306,8 @@ type StaticFilterData = {
 
 
 export default function Dashboard({ selectedView }: {selectedView: string}) {
-    const [filters, setFilters] = useState<DashboardFilters>({
+
+    const EMPTY_FILTERS: DashboardFilters = {
         teamcodes: [],
         channel: "",
         timeframe: "",
@@ -315,13 +316,25 @@ export default function Dashboard({ selectedView }: {selectedView: string}) {
         account: "",
         currencyPair: "",
         errorCodes: [],
-
         startDate: "",
         endDate: "",
         selectedCurrencies: [],
-        
-    });   
-    
+    };
+
+    const EMPTY_BLOTTER_FILTERS = {
+        channel: "",
+        currencyPair: "",
+        selectedCurrencies: [] as string[],
+    };
+
+    // Committed filters — drive actual data queries. Only updated on Apply.
+    const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
+    const [blotterFilters, setBlotterFilters] = useState(EMPTY_BLOTTER_FILTERS);
+
+    // Draft filters — bound to the filter panel controls. Written on every
+    // control change; committed to filters/blotterFilters only on Apply.
+    const [draftFilters, setDraftFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
+    const [draftBlotterFilters, setDraftBlotterFilters] = useState(EMPTY_BLOTTER_FILTERS);
 const [staticFilterData, setStaticFilterData] = 
     useState<StaticFilterData["static_data"] | null>(null);    
 const [openDropdown, setOpenDropdown] = useState(false);
@@ -329,12 +342,6 @@ const [openDateRange, setOpenDateRange] = useState(false);
 const [selectedRow, setSelectedRow] =useState<any>(null);
 const [popoupOpen, setPopupOpen] = useState(false);
 const [requestDetails, setRequestDetails] =useState<any[]>([]);
-
-const [blotterFilters, setBlotterFilters] = useState({
-    channel: "",
-    currencyPair: "",
-    selectedCurrencies: [] as string[],
-})
 
 const handleRowClick = (row: any) => {
     console.log("Clicked row:", row);
@@ -359,6 +366,20 @@ const handleRowClick = (row: any) => {
     });
     
 };
+
+    // Apply: commit draft state → live filters, then re-fetch
+    const handleApplyFilters = () => {
+        setFilters(draftFilters);
+        setBlotterFilters(draftBlotterFilters);
+    };
+
+    // Reset: clear both draft and committed state
+    const handleResetFilters = () => {
+        setDraftFilters(EMPTY_FILTERS);
+        setDraftBlotterFilters(EMPTY_BLOTTER_FILTERS);
+        setFilters(EMPTY_FILTERS);
+        setBlotterFilters(EMPTY_BLOTTER_FILTERS);
+    };
 
 const { allRecord, dataloading, dataError } = useDashboardData();
 
@@ -643,14 +664,6 @@ const itemStyle = {
     useEffect(() => {
         setFilterdData(data);
     }, [data]);
-
-
-    useEffect(() => {
-        console.log("Filters Changed: ", filters);
-        fetchDashboard(filters).then((res) => {
-            setData(res);
-        });
-    }, [filters]);
 
     useEffect(() => {
         let active = true;
@@ -952,14 +965,14 @@ const itemStyle = {
                                                     
                                                 }))}
 
-                                                value={filters.teamcodes.map(code => ({
+                                                value={draftFilters.teamcodes.map(code => ({
                                                     value: code,
                                                     label: code
                                                 }))}
 
                                                 onChange={(selected) =>
-                                                    setFilters({
-                                                        ...filters,
+                                                    setDraftFilters({
+                                                        ...draftFilters,
                                                         teamcodes: selected.map(s => s.value)
                                                     })
                                                 }
@@ -1011,19 +1024,18 @@ const itemStyle = {
                                                     label: channel
                                                 }))}
 
-                                                value={blotterFilters.channel
-                                                    ? {value: blotterFilters.channel, label: blotterFilters.channel }
+                                                value={draftBlotterFilters.channel
+                                                    ? {value: draftBlotterFilters.channel, label: draftBlotterFilters.channel }
                                                     : null
                                                 }
 
                                                 onChange={(selected) => {
-
                                                     const value = selected?.value || "";
-                                                    setFilters( prev => ({
+                                                    setDraftFilters( prev => ({
                                                         ...prev,
                                                         channel: value,
                                                     }));
-                                                    setBlotterFilters( prev => ({
+                                                    setDraftBlotterFilters( prev => ({
                                                         ...prev,
                                                         channel: value,
                                                     }));
@@ -1071,7 +1083,7 @@ const itemStyle = {
                                                         position: "relative"
                                                     }}
                                                 >
-                                                    {filters.timeframe === "custom" ? "Date Range" : filters.timeframe?.replaceAll("_"," ") || "Select"}
+                                                    {draftFilters.timeframe === "custom" ? "Date Range" : draftFilters.timeframe?.replaceAll("_"," ") || "Select"}
                                                 </div>
 
                                                 <span style={{ position: "absolute", right: "10px", top: "20%", transform: "translate(-50%)", pointerEvents: "none", fontSize: "12px"}}>▼</span>
@@ -1103,7 +1115,7 @@ const itemStyle = {
                                                             <div
                                                                 key={item.value}
                                                                 onClick={() => {
-                                                                    setFilters({ ...filters, timeframe: item.value });
+                                                                    setDraftFilters({ ...draftFilters, timeframe: item.value });
                                                                     setOpenDropdown(false);
                                                                 }}
                                                                 style={itemStyle}
@@ -1122,7 +1134,7 @@ const itemStyle = {
                                                             <div
                                                                 key={item.value}
                                                                 onClick={() => {
-                                                                    setFilters({ ...filters, timeframe: item.value });
+                                                                    setDraftFilters({ ...draftFilters, timeframe: item.value });
                                                                     setOpenDropdown(false);
                                                                 }}
                                                                 style={itemStyle}
@@ -1147,10 +1159,10 @@ const itemStyle = {
 
                                                                     <input
                                                                         type="datetime-local"
-                                                                        value={filters.startDate || ""}
+                                                                        value={draftFilters.startDate || ""}
                                                                         onChange={(e) =>
-                                                                            setFilters({
-                                                                                ...filters,
+                                                                            setDraftFilters({
+                                                                                ...draftFilters,
                                                                                 startDate: e.target.value,
                                                                                 timeframe: "custom"
                                                                             })
@@ -1162,10 +1174,10 @@ const itemStyle = {
 
                                                                     <input
                                                                         type="datetime-local"
-                                                                        value={filters.endDate || ""}
+                                                                        value={draftFilters.endDate || ""}
                                                                         onChange={(e) =>
-                                                                            setFilters({
-                                                                                ...filters,
+                                                                            setDraftFilters({
+                                                                                ...draftFilters,
                                                                                 endDate: e.target.value,
                                                                                 timeframe: "custom"
                                                                             })
@@ -1185,13 +1197,12 @@ const itemStyle = {
                                                                 >
                                                                     <button
                                                                         onClick={() => {
-                                                                            setFilters({
-                                                                                ...filters,
+                                                                            setDraftFilters({
+                                                                                ...draftFilters,
                                                                                 timeframe: "",
                                                                                 startDate: "",
                                                                                 endDate: "",
                                                                             });
-
                                                                         }}
                                                                         style={{
                                                                             flex: 1,
@@ -1253,14 +1264,14 @@ const itemStyle = {
                                                     label: pair
                                                 }))}
 
-                                                value={blotterFilters.currencyPair
-                                                    ? {value: blotterFilters.currencyPair, label: blotterFilters.currencyPair }
+                                                value={draftBlotterFilters.currencyPair
+                                                    ? {value: draftBlotterFilters.currencyPair, label: draftBlotterFilters.currencyPair }
                                                     : null
                                                 }
 
                                                 onChange={(selected) => {
                                                     if (!selected) {
-                                                        setBlotterFilters({
+                                                        setDraftBlotterFilters({
                                                             channel: "",
                                                             currencyPair: "",
                                                             selectedCurrencies: [] as string[],
@@ -1268,11 +1279,11 @@ const itemStyle = {
                                                         return;
                                                     }
                                                     const value = selected?.value || "";
-                                                    setFilters( prev => ({
+                                                    setDraftFilters( prev => ({
                                                         ...prev,
                                                         currencyPair: value,
                                                     }));
-                                                    setBlotterFilters( prev => ({
+                                                    setDraftBlotterFilters( prev => ({
                                                         ...prev,
                                                         currencyPair: value,
                                                     }));
@@ -1307,9 +1318,9 @@ const itemStyle = {
                                             <span>SalesPerson</span>
 
                                             <input className="filter-input"
-                                                   value={filters.salesPerson}
+                                                   value={draftFilters.salesPerson}
                                                    onChange={(e) =>
-                                                       setFilters({ ...filters, salesPerson: e.target.value })
+                                                       setDraftFilters({ ...draftFilters, salesPerson: e.target.value })
                                                    }
                                                    placeholder="Enter SalesPerson..."
                                                    style={{
@@ -1340,9 +1351,9 @@ const itemStyle = {
                                             <span>CIF</span>
 
                                             <input className="filter-input"
-                                                   value={filters.cif}
+                                                   value={draftFilters.cif}
                                                    onChange={(e) =>
-                                                       setFilters({ ...filters, cif: e.target.value })
+                                                       setDraftFilters({ ...draftFilters, cif: e.target.value })
                                                    }
                                                    placeholder="Enter CIF..."
                                                    style={{
@@ -1372,8 +1383,8 @@ const itemStyle = {
                                             <span>Account</span>
 
                                             <input className="filter-input"
-                                                   value={filters.account}
-                                                   onChange={(e) => setFilters({ ...filters, account: e.target.value })}
+                                                   value={draftFilters.account}
+                                                   onChange={(e) => setDraftFilters({ ...draftFilters, account: e.target.value })}
                                                    placeholder="Enter Account"
                                                    style={{
                                                        height: "50px",
@@ -1403,15 +1414,51 @@ const itemStyle = {
                                                     options={(staticFilterData?.error_code ?? []).map(
                                                         item => item.split(" - ")[0].trim()
                                                     )}
-
-                                                    
-
-                                                
-                                                    value={filters.errorCodes}
-                                                    onChange={(v) => setFilters({ ...filters, errorCodes: v})}
+                                                    value={draftFilters.errorCodes}
+                                                    onChange={(v) => setDraftFilters({ ...draftFilters, errorCodes: v})}
                                                     placeholder="ALL"
                                                 />
                                             </div>
+                                        </div>
+
+                                        <div style={{
+                                            display: "flex",
+                                            gap: "10px",
+                                            justifyContent: "flex-end",
+                                            paddingTop: "8px",
+                                            borderTop: "1px solid #e5e7eb",
+                                        }}>
+                                            <button
+                                                type="button"
+                                                onClick={handleResetFilters}
+                                                style={{
+                                                    padding: "8px 20px",
+                                                    borderRadius: "6px",
+                                                    border: "1px solid #d1d5db",
+                                                    background: "#f3f4f6",
+                                                    color: "#374151",
+                                                    fontSize: "0.875rem",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                Reset
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleApplyFilters}
+                                                style={{
+                                                    padding: "8px 20px",
+                                                    borderRadius: "6px",
+                                                    border: "none",
+                                                    background: "#1d4ed8",
+                                                    color: "#ffffff",
+                                                    fontSize: "0.875rem",
+                                                    cursor: "pointer",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Apply Filters
+                                            </button>
                                         </div>
 
                                     </div>
